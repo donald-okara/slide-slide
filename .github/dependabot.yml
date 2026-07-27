@@ -7,6 +7,10 @@ updates:
       day: tuesday
       time: "08:00"
       timezone: "Africa/Nairobi"
+    groups:
+      detekt:
+        patterns:
+          - "io.gitlab.arturbosch.detekt*"
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
