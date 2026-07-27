@@ -4,3 +4,12 @@ Slide Slide is a modern Android implementation of the classic sliding tile puzzl
 The project demonstrates how a deceptively simple game benefits from a layered architecture, separating persistence, puzzle logic, and presentation through well-defined interfaces. Features such as game persistence, undo, shuffle, move tracking, timers, and optional solving algorithms showcase state management, Room integration, and algorithmic problem solving in a modular Compose application. 
 
 The result is both an enjoyable game and a practical example of building maintainable Android applications with independently testable components.
+
+---
+
+# Project Documentation
+
+For more detailed information about the inner workings of Slide Slide, please refer to the following documents:
+
+*   **[Architecture Overview](ARCHITECTURE.md)**: A deep dive into the project's layered structure, package organization, and the roles of key components like the `PuzzleManager` and Room database.
+*   **[Game Lifecycle](LIFECYCLE.md)**: Details on the single-session, ephemeral nature of games in Slide Slide and the rationale behind using Room as an in-memory reactive state store.
