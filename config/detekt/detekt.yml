@@ -30,6 +30,8 @@ naming:
     active: true
   FunctionNaming:
     active: true
+    ignoreAnnotated:
+      - 'Composable'
   VariableNaming:
     active: true
 
@@ -37,6 +39,10 @@ style:
   active: true
   MagicNumber:
     active: true
+    excludes:
+      - '**/Color.kt'
+      - '**/test/**'
+      - '**/androidTest/**'
     ignoreNumbers:
       - '-1'
       - '0'
