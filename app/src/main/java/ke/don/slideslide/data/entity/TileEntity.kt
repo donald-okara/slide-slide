@@ -17,6 +17,7 @@ package ke.don.slideslide.data.entity
 
 import androidx.room.Entity
 import androidx.room.ForeignKey
+import androidx.room.Index
 
 @Entity(
     tableName = "tiles",
@@ -29,11 +30,13 @@ import androidx.room.ForeignKey
             onDelete = ForeignKey.CASCADE,
         ),
     ],
+    indices = [Index("gameId")],
 )
 data class TileEntity(
     val gameId: Long,
     val id: Int,
     val value: Int,
     val currentPosition: Int,
+    val correctPosition: Int,
     val isBlank: Boolean,
 )

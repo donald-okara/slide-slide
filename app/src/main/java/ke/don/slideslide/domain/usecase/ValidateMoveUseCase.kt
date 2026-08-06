@@ -16,44 +16,47 @@
 package ke.don.slideslide.domain.usecase
 
 import ke.don.slideslide.domain.model.Game
-import ke.don.slideslide.domain.model.Tile
+import ke.don.slideslide.domain.model.Move
 import kotlin.math.abs
 
 /**
- * Use case to validate if a tile can be moved in a sliding puzzle.
- * A tile can only move if it is horizontally or vertically adjacent to the blank space.
+ * Use case to validate if a move is legal in a sliding puzzle.
+ * A move is legal if:
+ * 1. The target position is currently occupied by the blank tile.
+ * 2. The source position is occupied by a non-blank tile.
+ * 3. The source and target positions are horizontally or vertically adjacent.
  */
 class ValidateMoveUseCase {
     /**
-     * Validates if the given [tile] can be moved within the current [game] state.
+     * Validates if the given [move] is legal within the current [game] state.
      *
      * @param game The current state of the game.
-     * @param tile The tile the user intends to move.
+     * @param move The move to validate.
      * @return true if the move is legal, false otherwise.
      */
     operator fun invoke(
         game: Game,
-        tile: Tile,
+        move: Move,
     ): Boolean {
-        val blankTile = game.tiles.find { it.isBlank }
+        val fromTile = game.tiles.find { it.currentPosition == move.fromPosition }
+        val toTile = game.tiles.find { it.currentPosition == move.toPosition }
 
-        // Cannot move if target tile is blank or if no blank tile exists in the game
-        if (tile.isBlank || blankTile == null) {
-            return false
+        return when {
+            fromTile == null || toTile == null -> false
+            fromTile.isBlank -> false
+            !toTile.isBlank -> false
+            else -> {
+                val gridSize = game.difficulty.size
+                val fromRow = move.fromPosition / gridSize
+                val fromCol = move.fromPosition % gridSize
+                val toRow = move.toPosition / gridSize
+                val toCol = move.toPosition % gridSize
+
+                val rowDiff = abs(fromRow - toRow)
+                val colDiff = abs(fromCol - toCol)
+
+                (rowDiff == 1 && colDiff == 0) || (rowDiff == 0 && colDiff == 1)
+            }
         }
-
-        val gridSize = game.difficulty.size
-
-        val tileRow = tile.currentPosition / gridSize
-        val tileCol = tile.currentPosition % gridSize
-
-        val blankRow = blankTile.currentPosition / gridSize
-        val blankCol = blankTile.currentPosition % gridSize
-
-        val rowDiff = abs(tileRow - blankRow)
-        val colDiff = abs(tileCol - blankCol)
-
-        // Legal move if the tile is adjacent to the blank tile (Manhattan distance == 1)
-        return (rowDiff == 1 && colDiff == 0) || (rowDiff == 0 && colDiff == 1)
     }
 }

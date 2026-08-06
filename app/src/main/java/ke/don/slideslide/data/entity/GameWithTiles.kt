@@ -15,27 +15,17 @@
  */
 package ke.don.slideslide.data.entity
 
-import androidx.room.Entity
-import androidx.room.ForeignKey
-import androidx.room.Index
-import androidx.room.PrimaryKey
+import androidx.room.Embedded
+import androidx.room.Relation
 
-@Entity(
-    tableName = "moves",
-    foreignKeys = [
-        ForeignKey(
-            entity = GameEntity::class,
-            parentColumns = ["id"],
-            childColumns = ["gameId"],
-            onDelete = ForeignKey.CASCADE,
-        ),
-    ],
-    indices = [Index("gameId")],
-)
-data class MoveEntity(
-    @PrimaryKey(autoGenerate = true) val id: Long = 0,
-    val gameId: Long,
-    val fromPosition: Int,
-    val toPosition: Int,
-    val timestamp: Long,
+/**
+ * Represents a game along with its associated tiles.
+ */
+data class GameWithTiles(
+    @Embedded val game: GameEntity,
+    @Relation(
+        parentColumn = "id",
+        entityColumn = "gameId",
+    )
+    val tiles: List<TileEntity>,
 )

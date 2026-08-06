@@ -13,21 +13,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ke.don.slideslide.domain.model
+package ke.don.slideslide.data.database
+
+import androidx.room.Database
+import androidx.room.RoomDatabase
+import androidx.room.TypeConverters
+import ke.don.slideslide.data.dao.PuzzleDao
+import ke.don.slideslide.data.entity.GameEntity
+import ke.don.slideslide.data.entity.MoveEntity
+import ke.don.slideslide.data.entity.TileEntity
 
 /**
- * Represents a single tile in the sliding puzzle.
- *
- * @property id Unique identifier for the tile.
- * @property value The number or original position index this tile represents.
- * @property currentPosition The current position of the tile on the grid (0 to size*size - 1).
- * @property correctPosition The position this tile should occupy in the solved state.
- * @property isBlank Whether this tile is the empty space.
+ * Main application database.
  */
-data class Tile(
-    val id: Int,
-    val value: Int,
-    val currentPosition: Int,
-    val correctPosition: Int,
-    val isBlank: Boolean = false,
+@Database(
+    entities = [GameEntity::class, TileEntity::class, MoveEntity::class],
+    version = 1,
+    exportSchema = false,
 )
+@TypeConverters(Converters::class)
+abstract class AppDatabase : RoomDatabase() {
+    abstract fun puzzleDao(): PuzzleDao
+}
