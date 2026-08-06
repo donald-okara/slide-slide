@@ -15,13 +15,20 @@
  */
 package ke.don.slideslide.domain.model
 
+private const val GRID_SIZE_EASY = 3
+private const val GRID_SIZE_MEDIUM = 4
+private const val GRID_SIZE_HARD = 5
+
 /**
  * Represents the difficulty levels of the puzzle, determined by the grid size.
  */
-enum class Difficulty(val size: Int) {
-    EASY(3),
-    MEDIUM(4),
-    HARD(5);
+enum class Difficulty(
+    val size: Int,
+) {
+    EASY(GRID_SIZE_EASY),
+    MEDIUM(GRID_SIZE_MEDIUM),
+    HARD(GRID_SIZE_HARD),
+    ;
 
     val totalTiles: Int get() = size * size
 }

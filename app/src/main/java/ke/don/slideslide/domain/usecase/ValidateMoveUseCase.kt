@@ -31,11 +31,16 @@ class ValidateMoveUseCase {
      * @param tile The tile the user intends to move.
      * @return true if the move is legal, false otherwise.
      */
-    operator fun invoke(game: Game, tile: Tile): Boolean {
-        // Cannot move the blank tile itself
-        if (tile.isBlank) return false
+    operator fun invoke(
+        game: Game,
+        tile: Tile,
+    ): Boolean {
+        val blankTile = game.tiles.find { it.isBlank }
 
-        val blankTile = game.tiles.find { it.isBlank } ?: return false
+        // Cannot move if target tile is blank or if no blank tile exists in the game
+        if (tile.isBlank || blankTile == null) {
+            return false
+        }
 
         val gridSize = game.difficulty.size
 

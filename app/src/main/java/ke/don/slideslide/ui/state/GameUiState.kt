@@ -28,5 +28,5 @@ data class GameUiState(
     val difficulty: Difficulty = Difficulty.EASY,
     val timerSeconds: Long = 0,
     val isLoading: Boolean = false,
-    val error: String? = null
+    val error: String? = null,
 )

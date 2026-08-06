@@ -23,7 +23,6 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class ValidateMoveUseCaseTest {
-
     private val validateMove = ValidateMoveUseCase()
 
     /**
@@ -34,14 +33,15 @@ class ValidateMoveUseCaseTest {
      * 6 7 8
      */
     private fun create3x3Game(blankPosition: Int): Game {
-        val tiles = (0..8).map { pos ->
-            Tile(
-                id = pos,
-                value = pos,
-                currentPosition = pos,
-                isBlank = pos == blankPosition
-            )
-        }
+        val tiles =
+            (0..8).map { pos ->
+                Tile(
+                    id = pos,
+                    value = pos,
+                    currentPosition = pos,
+                    isBlank = pos == blankPosition,
+                )
+            }
         return Game(difficulty = Difficulty.EASY, tiles = tiles)
     }
 
@@ -87,9 +87,10 @@ class ValidateMoveUseCaseTest {
         // 4  5  6  7
         // 8  9 10 11
         // 12 13 14 15
-        val tiles = (0..15).map { pos ->
-            Tile(id = pos, value = pos, currentPosition = pos, isBlank = pos == 3)
-        }
+        val tiles =
+            (0..15).map { pos ->
+                Tile(id = pos, value = pos, currentPosition = pos, isBlank = pos == 3)
+            }
         val game = Game(difficulty = Difficulty.MEDIUM, tiles = tiles)
 
         assertTrue("Move from left (pos 2) should be valid", validateMove(game, game.tiles[2]))

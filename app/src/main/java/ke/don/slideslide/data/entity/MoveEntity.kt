@@ -26,14 +26,14 @@ import androidx.room.PrimaryKey
             entity = GameEntity::class,
             parentColumns = ["id"],
             childColumns = ["gameId"],
-            onDelete = ForeignKey.CASCADE
-        )
-    ]
+            onDelete = ForeignKey.CASCADE,
+        ),
+    ],
 )
 data class MoveEntity(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
     val gameId: Long,
     val fromPosition: Int,
     val toPosition: Int,
-    val timestamp: Long
+    val timestamp: Long,
 )

@@ -27,5 +27,5 @@ data class Tile(
     val id: Int,
     val value: Int,
     val currentPosition: Int,
-    val isBlank: Boolean = false
+    val isBlank: Boolean = false,
 )

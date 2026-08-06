@@ -22,10 +22,11 @@ import org.junit.Test
 class GameTest {
     @Test
     fun `test game defaults`() {
-        val game = Game(
-            difficulty = Difficulty.EASY,
-            tiles = emptyList()
-        )
+        val game =
+            Game(
+                difficulty = Difficulty.EASY,
+                tiles = emptyList(),
+            )
         assertEquals(0L, game.id)
         assertEquals(0, game.moveCount)
         assertFalse(game.isWon)

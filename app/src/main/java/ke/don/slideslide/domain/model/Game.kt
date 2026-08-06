@@ -33,5 +33,5 @@ data class Game(
     val moveCount: Int = 0,
     val isWon: Boolean = false,
     val startTime: Long? = null,
-    val endTime: Long? = null
+    val endTime: Long? = null,
 )

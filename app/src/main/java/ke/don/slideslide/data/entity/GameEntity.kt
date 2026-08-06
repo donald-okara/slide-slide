@@ -26,5 +26,5 @@ data class GameEntity(
     val moveCount: Int,
     val isWon: Boolean,
     val startTime: Long?,
-    val endTime: Long?
+    val endTime: Long?,
 )

@@ -29,5 +29,5 @@ data class Move(
     val gameId: Long,
     val fromPosition: Int,
     val toPosition: Int,
-    val timestamp: Long = System.currentTimeMillis()
+    val timestamp: Long = System.currentTimeMillis(),
 )

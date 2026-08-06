@@ -26,14 +26,14 @@ import androidx.room.ForeignKey
             entity = GameEntity::class,
             parentColumns = ["id"],
             childColumns = ["gameId"],
-            onDelete = ForeignKey.CASCADE
-        )
-    ]
+            onDelete = ForeignKey.CASCADE,
+        ),
+    ],
 )
 data class TileEntity(
     val gameId: Long,
     val id: Int,
     val value: Int,
     val currentPosition: Int,
-    val isBlank: Boolean
+    val isBlank: Boolean,
 )
