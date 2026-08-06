@@ -13,19 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ke.don.slideslide
-
-import org.junit.Assert.assertEquals
-import org.junit.Test
+package ke.don.slideslide.domain.model
 
 /**
- * Example local unit test, which will execute on the development machine (host).
- *
- * See [testing documentation](http://d.android.com/tools/testing).
+ * Represents the difficulty levels of the puzzle, determined by the grid size.
  */
-class ExampleUnitTest {
-    @Test
-    fun addition_isCorrect() {
-        assertEquals(4, 2 + 2)
-    }
+enum class Difficulty(val size: Int) {
+    EASY(3),
+    MEDIUM(4),
+    HARD(5);
+
+    val totalTiles: Int get() = size * size
 }
