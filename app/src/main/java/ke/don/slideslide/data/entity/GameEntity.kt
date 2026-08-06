@@ -13,19 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ke.don.slideslide
+package ke.don.slideslide.data.entity
 
-import org.junit.Assert.assertEquals
-import org.junit.Test
+import androidx.room.Entity
+import androidx.room.PrimaryKey
+import ke.don.slideslide.domain.model.Difficulty
 
-/**
- * Example local unit test, which will execute on the development machine (host).
- *
- * See [testing documentation](http://d.android.com/tools/testing).
- */
-class ExampleUnitTest {
-    @Test
-    fun addition_isCorrect() {
-        assertEquals(4, 2 + 2)
-    }
-}
+@Entity(tableName = "games")
+data class GameEntity(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val difficulty: Difficulty,
+    val moveCount: Int,
+    val isWon: Boolean,
+    val startTime: Long?,
+    val endTime: Long?,
+)
