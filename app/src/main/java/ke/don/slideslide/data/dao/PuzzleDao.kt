@@ -1,0 +1,68 @@
+/*
+ * Copyright (C) 2026 Donald Isoe.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package ke.don.slideslide.data.dao
+
+import androidx.room.Dao
+import androidx.room.Insert
+import androidx.room.OnConflictStrategy
+import androidx.room.Query
+import androidx.room.Transaction
+import ke.don.slideslide.data.entity.GameEntity
+import ke.don.slideslide.data.entity.GameWithTiles
+import ke.don.slideslide.data.entity.MoveEntity
+import ke.don.slideslide.data.entity.TileEntity
+import kotlinx.coroutines.flow.Flow
+
+/**
+ * Data Access Object for puzzle-related operations.
+ */
+@Dao
+interface PuzzleDao {
+    @Transaction
+    @Query("SELECT * FROM games WHERE id = :gameId")
+    fun observeGame(gameId: Long): Flow<GameWithTiles?>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertGame(game: GameEntity): Long
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertTiles(tiles: List<TileEntity>)
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertMove(move: MoveEntity): Long
+
+    @Transaction
+    suspend fun upsertGame(
+        game: GameEntity,
+        tiles: List<TileEntity>,
+    ) {
+        insertGame(game)
+        insertTiles(tiles)
+    }
+
+    @Query("DELETE FROM games WHERE id = :gameId")
+    suspend fun deleteGame(gameId: Long)
+
+    @Query("DELETE FROM moves WHERE gameId = :gameId")
+    suspend fun deleteMoves(gameId: Long)
+
+    @Query("UPDATE tiles SET currentPosition = :newPosition WHERE gameId = :gameId AND id = :tileId")
+    suspend fun updateTilePosition(
+        gameId: Long,
+        tileId: Int,
+        newPosition: Int,
+    )
+}
