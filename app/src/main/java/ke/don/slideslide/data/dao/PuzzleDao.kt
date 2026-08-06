@@ -30,6 +30,7 @@ import kotlinx.coroutines.flow.Flow
  * Data Access Object for puzzle-related operations.
  */
 @Dao
+@Suppress("TooManyFunctions")
 interface PuzzleDao {
     @Transaction
     @Query("SELECT * FROM games WHERE id = :gameId")
@@ -59,10 +60,63 @@ interface PuzzleDao {
     @Query("DELETE FROM moves WHERE gameId = :gameId")
     suspend fun deleteMoves(gameId: Long)
 
+    @Query("DELETE FROM games")
+    suspend fun deleteAllGames()
+
     @Query("UPDATE tiles SET currentPosition = :newPosition WHERE gameId = :gameId AND id = :tileId")
     suspend fun updateTilePosition(
         gameId: Long,
         tileId: Int,
         newPosition: Int,
     )
+
+    @Query("UPDATE games SET moveCount = :moveCount, isWon = :isWon, endTime = :endTime WHERE id = :gameId")
+    suspend fun updateGameStatus(
+        gameId: Long,
+        moveCount: Int,
+        isWon: Boolean,
+        endTime: Long?,
+    )
+
+    @Query("SELECT * FROM moves WHERE gameId = :gameId ORDER BY timestamp DESC LIMIT 1")
+    suspend fun getLatestMove(gameId: Long): MoveEntity?
+
+    @Query("DELETE FROM moves WHERE id = :moveId")
+    suspend fun deleteMove(moveId: Long)
+
+    @Transaction
+    @Suppress("LongParameterList")
+    suspend fun executeMove(
+        gameId: Long,
+        moveCount: Int,
+        isWon: Boolean,
+        endTime: Long?,
+        move: MoveEntity,
+        movingTileId: Int,
+        blankTileId: Int,
+    ) {
+        updateGameStatus(gameId, moveCount, isWon, endTime)
+        insertMove(move)
+        // The tile being moved goes to the 'to' position (where blank was)
+        updateTilePosition(gameId, movingTileId, move.toPosition)
+        // The blank tile goes to the 'from' position (where the tile was)
+        updateTilePosition(gameId, blankTileId, move.fromPosition)
+    }
+
+    @Transaction
+    @Suppress("LongParameterList")
+    suspend fun executeUndo(
+        gameId: Long,
+        moveCount: Int,
+        moveId: Long,
+        movingTileId: Int,
+        originalPosition: Int,
+        blankTileId: Int,
+        blankOriginalPosition: Int,
+    ) {
+        updateGameStatus(gameId, moveCount, false, null)
+        deleteMove(moveId)
+        updateTilePosition(gameId, movingTileId, originalPosition)
+        updateTilePosition(gameId, blankTileId, blankOriginalPosition)
+    }
 }

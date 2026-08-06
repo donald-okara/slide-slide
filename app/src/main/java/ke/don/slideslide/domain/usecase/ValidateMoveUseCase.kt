@@ -17,6 +17,7 @@ package ke.don.slideslide.domain.usecase
 
 import ke.don.slideslide.domain.model.Game
 import ke.don.slideslide.domain.model.Move
+import ke.don.slideslide.domain.model.Tile
 import kotlin.math.abs
 
 /**
@@ -26,36 +27,46 @@ import kotlin.math.abs
  * 2. The source position is occupied by a non-blank tile.
  * 3. The source and target positions are horizontally or vertically adjacent.
  */
-class ValidateMoveUseCase {
+interface ValidateMoveUseCase {
     /**
      * Validates if the given [move] is legal within the current [game] state.
      *
      * @param game The current state of the game.
      * @param move The move to validate.
-     * @return true if the move is legal, false otherwise.
+     * @return A pair of (movingTile, blankTile) if the move is legal, null otherwise.
      */
     operator fun invoke(
         game: Game,
         move: Move,
-    ): Boolean {
+    ): Pair<Tile, Tile>?
+}
+
+class ValidateMoveUseCaseImpl : ValidateMoveUseCase {
+    override fun invoke(
+        game: Game,
+        move: Move,
+    ): Pair<Tile, Tile>? {
         val fromTile = game.tiles.find { it.currentPosition == move.fromPosition }
         val toTile = game.tiles.find { it.currentPosition == move.toPosition }
 
         return when {
-            fromTile == null || toTile == null -> false
-            fromTile.isBlank -> false
-            !toTile.isBlank -> false
+            fromTile == null || toTile == null -> null
+            fromTile.isBlank || !toTile.isBlank -> null
             else -> {
                 val gridSize = game.difficulty.size
+
                 val fromRow = move.fromPosition / gridSize
                 val fromCol = move.fromPosition % gridSize
+
                 val toRow = move.toPosition / gridSize
                 val toCol = move.toPosition % gridSize
 
                 val rowDiff = abs(fromRow - toRow)
                 val colDiff = abs(fromCol - toCol)
 
-                (rowDiff == 1 && colDiff == 0) || (rowDiff == 0 && colDiff == 1)
+                val isAdjacent = (rowDiff == 1 && colDiff == 0) || (rowDiff == 0 && colDiff == 1)
+
+                if (isAdjacent) fromTile to toTile else null
             }
         }
     }

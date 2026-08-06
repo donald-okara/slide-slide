@@ -1,0 +1,20 @@
+[
+{
+    "difficulty": "EASY",
+    "status": "SUCCESS",
+    "avg_moves": 22.00,
+    "avg_time_ms": 60.33
+},
+{
+    "difficulty": "MEDIUM",
+    "status": "SUCCESS",
+    "avg_moves": 14.67,
+    "avg_time_ms": 6.00
+},
+{
+    "difficulty": "HARD",
+    "status": "SUCCESS",
+    "avg_moves": 10.00,
+    "avg_time_ms": 2.00
+}
+]
