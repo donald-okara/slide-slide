@@ -20,6 +20,7 @@ import ke.don.slideslide.domain.model.Game
 import ke.don.slideslide.domain.model.Tile
 import org.junit.Test
 import java.io.File
+import java.util.Locale
 
 class SolverBenchmarkTest {
     private val solve: SolveUseCase = SolveUseCaseImpl()
@@ -30,66 +31,8 @@ class SolverBenchmarkTest {
         val iterationsPerDifficulty = 3
 
         Difficulty.entries.forEach { difficulty ->
-            val movesList = mutableListOf<Int>()
-            val timesList = mutableListOf<Long>()
-            var successCount = 0
-
-            val solvedTiles =
-                (0 until difficulty.totalTiles).map { index ->
-                    Tile(
-                        id = index,
-                        value = index,
-                        currentPosition = index,
-                        correctPosition = index,
-                        isBlank = index == difficulty.totalTiles - 1,
-                    )
-                }
-
-            val benchmarkShuffleDepth =
-                when (difficulty) {
-                    Difficulty.EASY -> 100
-                    Difficulty.MEDIUM -> 20
-                    Difficulty.HARD -> 10
-                }
-
-            repeat(iterationsPerDifficulty) {
-                val testShuffledTiles = performLimitedShuffle(solvedTiles, difficulty, benchmarkShuffleDepth)
-                val game = Game(id = 1, difficulty = difficulty, tiles = testShuffledTiles)
-
-                val startTime = System.currentTimeMillis()
-                val solution = solve(game)
-                val duration = System.currentTimeMillis() - startTime
-
-                if (solution != null) {
-                    movesList.add(solution.size)
-                    timesList.add(duration)
-                    successCount++
-                }
-            }
-
-            val avgMoves = if (movesList.isNotEmpty()) movesList.average() else -1.0
-            val avgTime = if (timesList.isNotEmpty()) timesList.average() else -1.0
-            val status =
-                if (successCount == iterationsPerDifficulty) {
-                    "SUCCESS"
-                } else if (successCount > 0) {
-                    "PARTIAL_SUCCESS ($successCount/$iterationsPerDifficulty)"
-                } else {
-                    "FAILED"
-                }
-
-            results.add(
-                """
-                {
-                    "difficulty": "${difficulty.name}",
-                    "status": "$status",
-                    "avg_moves": ${String.format("%.2f", avgMoves)},
-                    "avg_time_ms": ${String.format("%.2f", avgTime)}
-                }
-                """.trimIndent(),
-            )
-
-            println("Benchmark [${difficulty.name}]: $status, Avg Moves: $avgMoves, Avg Time: ${avgTime}ms")
+            val result = runBenchmarkForDifficulty(difficulty, iterationsPerDifficulty)
+            results.add(result)
         }
 
         val json = results.joinToString(separator = ",\n", prefix = "[\n", postfix = "\n]")
@@ -97,6 +40,73 @@ class SolverBenchmarkTest {
         reportFile.writeText(json)
         println("Benchmark report written to: ${reportFile.absolutePath}")
     }
+
+    private fun runBenchmarkForDifficulty(
+        difficulty: Difficulty,
+        iterations: Int,
+    ): String {
+        val movesList = mutableListOf<Int>()
+        val timesList = mutableListOf<Long>()
+        var successCount = 0
+
+        val solvedTiles =
+            (0 until difficulty.totalTiles).map { index ->
+                Tile(
+                    id = index,
+                    value = index,
+                    currentPosition = index,
+                    correctPosition = index,
+                    isBlank = index == difficulty.totalTiles - 1,
+                )
+            }
+
+        val benchmarkShuffleDepth =
+            when (difficulty) {
+                Difficulty.EASY -> SHUFFLE_DEPTH_EASY
+                Difficulty.MEDIUM -> SHUFFLE_DEPTH_MEDIUM
+                Difficulty.HARD -> SHUFFLE_DEPTH_HARD
+            }
+
+        repeat(iterations) {
+            val testShuffledTiles = performLimitedShuffle(solvedTiles, difficulty, benchmarkShuffleDepth)
+            val game = Game(id = 1, difficulty = difficulty, tiles = testShuffledTiles)
+
+            val startTime = System.currentTimeMillis()
+            val solution = solve(game)
+            val duration = System.currentTimeMillis() - startTime
+
+            if (solution != null) {
+                movesList.add(solution.size)
+                timesList.add(duration)
+                successCount++
+            }
+        }
+
+        val avgMoves = if (movesList.isNotEmpty()) movesList.average() else -1.0
+        val avgTime = if (timesList.isNotEmpty()) timesList.average() else -1.0
+        val status = getStatus(successCount, iterations)
+
+        println("Benchmark [${difficulty.name}]: $status, Avg Moves: $avgMoves, Avg Time: ${avgTime}ms")
+
+        return """
+            {
+                "difficulty": "${difficulty.name}",
+                "status": "$status",
+                "avg_moves": ${String.format(Locale.US, "%.2f", avgMoves)},
+                "avg_time_ms": ${String.format(Locale.US, "%.2f", avgTime)}
+            }
+            """.trimIndent()
+    }
+
+    private fun getStatus(
+        successCount: Int,
+        total: Int,
+    ): String =
+        when {
+            successCount == total -> "SUCCESS"
+            successCount > 0 -> "PARTIAL_SUCCESS ($successCount/$total)"
+            else -> "FAILED"
+        }
 
     private fun performLimitedShuffle(
         tiles: List<Tile>,
@@ -129,5 +139,11 @@ class SolverBenchmarkTest {
             lastPos = blankPos
         }
         return currentTiles
+    }
+
+    companion object {
+        private const val SHUFFLE_DEPTH_EASY = 100
+        private const val SHUFFLE_DEPTH_MEDIUM = 20
+        private const val SHUFFLE_DEPTH_HARD = 10
     }
 }
