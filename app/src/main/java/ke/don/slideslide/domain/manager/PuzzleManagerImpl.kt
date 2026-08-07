@@ -172,7 +172,12 @@ class PuzzleManagerImpl(
             puzzleDao.observeGame(id).map { it?.toDomain() }
         } ?: kotlinx.coroutines.flow.flowOf(null)
 
-    override suspend fun bestNextMove(): Move? = solutionMoves?.firstOrNull()
+    override suspend fun bestNextMove(): Move? {
+        if (solutionMoves == null) {
+            autoSolve()
+        }
+        return solutionMoves?.firstOrNull()
+    }
 
     override suspend fun autoSolve() {
         val gameId = currentGameId ?: return
