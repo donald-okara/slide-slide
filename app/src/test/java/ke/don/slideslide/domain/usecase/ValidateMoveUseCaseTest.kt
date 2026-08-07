@@ -19,12 +19,12 @@ import ke.don.slideslide.domain.model.Difficulty
 import ke.don.slideslide.domain.model.Game
 import ke.don.slideslide.domain.model.Move
 import ke.don.slideslide.domain.model.Tile
-import org.junit.Assert.assertFalse
-import org.junit.Assert.assertTrue
+import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertNull
 import org.junit.Test
 
 class ValidateMoveUseCaseTest {
-    private val validateMove = ValidateMoveUseCase()
+    private val validateMove: ValidateMoveUseCase = ValidateMoveUseCaseImpl()
 
     /**
      * Helper to create a 3x3 game with the blank tile at a specific position.
@@ -57,35 +57,35 @@ class ValidateMoveUseCaseTest {
         val game = create3x3Game(blankPosition = 4) // Center
 
         // Adjacent tiles moving into blank space should be valid
-        assertTrue("Up move should be valid", validateMove(game, createMove(1, 4)))
-        assertTrue("Down move should be valid", validateMove(game, createMove(7, 4)))
-        assertTrue("Left move should be valid", validateMove(game, createMove(3, 4)))
-        assertTrue("Right move should be valid", validateMove(game, createMove(5, 4)))
+        assertNotNull("Up move should be valid", validateMove(game, createMove(1, 4)))
+        assertNotNull("Down move should be valid", validateMove(game, createMove(7, 4)))
+        assertNotNull("Left move should be valid", validateMove(game, createMove(3, 4)))
+        assertNotNull("Right move should be valid", validateMove(game, createMove(5, 4)))
 
         // Distant tiles should be invalid
-        assertFalse("Corner move should be invalid", validateMove(game, createMove(0, 4)))
-        assertFalse("Corner move should be invalid", validateMove(game, createMove(2, 4)))
-        assertFalse("Corner move should be invalid", validateMove(game, createMove(6, 4)))
-        assertFalse("Corner move should be invalid", validateMove(game, createMove(8, 4)))
+        assertNull("Corner move should be invalid", validateMove(game, createMove(0, 4)))
+        assertNull("Corner move should be invalid", validateMove(game, createMove(2, 4)))
+        assertNull("Corner move should be invalid", validateMove(game, createMove(6, 4)))
+        assertNull("Corner move should be invalid", validateMove(game, createMove(8, 4)))
     }
 
     @Test
     fun `test move from top-left corner`() {
         val game = create3x3Game(blankPosition = 0)
 
-        assertTrue("Move from right should be valid", validateMove(game, createMove(1, 0)))
-        assertTrue("Move from below should be valid", validateMove(game, createMove(3, 0)))
+        assertNotNull("Move from right should be valid", validateMove(game, createMove(1, 0)))
+        assertNotNull("Move from below should be valid", validateMove(game, createMove(3, 0)))
 
-        assertFalse("Diagonal move should be invalid", validateMove(game, createMove(4, 0)))
-        assertFalse("Far move should be invalid", validateMove(game, createMove(8, 0)))
+        assertNull("Diagonal move should be invalid", validateMove(game, createMove(4, 0)))
+        assertNull("Far move should be invalid", validateMove(game, createMove(8, 0)))
     }
 
     @Test
     fun `test move blank tile is always invalid`() {
         val game = create3x3Game(blankPosition = 4)
 
-        assertFalse("Moving the blank tile from its position should be invalid", validateMove(game, createMove(4, 4)))
-        assertFalse("Moving something to a non-blank position should be invalid", validateMove(game, createMove(1, 2)))
+        assertNull("Moving the blank tile from its position should be invalid", validateMove(game, createMove(4, 4)))
+        assertNull("Moving something to a non-blank position should be invalid", validateMove(game, createMove(1, 2)))
     }
 
     @Test
@@ -100,10 +100,10 @@ class ValidateMoveUseCaseTest {
             }
         val game = Game(id = 1L, difficulty = Difficulty.MEDIUM, tiles = tiles)
 
-        assertTrue("Move from left (pos 2) should be valid", validateMove(game, createMove(2, 3)))
-        assertTrue("Move from below (pos 7) should be valid", validateMove(game, createMove(7, 3)))
+        assertNotNull("Move from left (pos 2) should be valid", validateMove(game, createMove(2, 3)))
+        assertNotNull("Move from below (pos 7) should be valid", validateMove(game, createMove(7, 3)))
 
-        assertFalse(
+        assertNull(
             "Move from pos 4 should be invalid (not adjacent despite being row-end to row-start)",
             validateMove(game, createMove(4, 3)),
         )

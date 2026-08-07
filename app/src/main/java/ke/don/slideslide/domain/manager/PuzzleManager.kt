@@ -18,7 +18,6 @@ package ke.don.slideslide.domain.manager
 import ke.don.slideslide.domain.model.Difficulty
 import ke.don.slideslide.domain.model.Game
 import ke.don.slideslide.domain.model.Move
-import ke.don.slideslide.domain.model.Tile
 import kotlinx.coroutines.flow.Flow
 
 /**
@@ -35,7 +34,7 @@ interface PuzzleManager {
      * Moves a tile to the blank space if it is a legal move.
      * @return true if the move was successful, false otherwise.
      */
-    suspend fun moveTile(tile: Tile): Boolean
+    suspend fun moveTile(move: Move): Boolean
 
     /**
      * Shuffles the tiles of the current game.
@@ -47,11 +46,6 @@ interface PuzzleManager {
      * @return true if undo was successful.
      */
     suspend fun undo(): Boolean
-
-    /**
-     * Resets the current game to its initial (unshuffled) state.
-     */
-    suspend fun reset()
 
     /**
      * Observes the current game state.
@@ -67,4 +61,9 @@ interface PuzzleManager {
      * Automatically solves the puzzle from the current state.
      */
     suspend fun autoSolve()
+
+    /**
+     * Clears all game data from persistence and resets the manager state.
+     */
+    suspend fun clearAll()
 }
