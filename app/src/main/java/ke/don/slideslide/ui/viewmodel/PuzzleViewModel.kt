@@ -15,6 +15,8 @@
  */
 package ke.don.slideslide.ui.viewmodel
 
+import android.os.Build
+import androidx.annotation.RequiresApi
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -22,22 +24,74 @@ import ke.don.slideslide.domain.manager.PuzzleManager
 import ke.don.slideslide.domain.model.Difficulty
 import ke.don.slideslide.domain.model.Move
 import ke.don.slideslide.ui.state.PuzzleUiState
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import java.time.Clock
 import javax.inject.Inject
+import kotlin.time.Duration.Companion.milliseconds
 
 @HiltViewModel
 class PuzzleViewModel
+    @RequiresApi(Build.VERSION_CODES.O)
     @Inject
     constructor(
         private val puzzleManager: PuzzleManager,
+        private val clock: Clock,
     ) : ViewModel() {
         private val _uiState = MutableStateFlow(PuzzleUiState())
 
         val uiState: StateFlow<PuzzleUiState> = _uiState.asStateFlow()
+
+        init {
+            observeGame()
+            startTimer()
+        }
+
+        @RequiresApi(Build.VERSION_CODES.O)
+        private fun observeGame() {
+            viewModelScope.launch {
+                puzzleManager.observeGame().collect { game ->
+                    updateState {
+                        copy(
+                            tiles = game?.tiles.orEmpty(),
+                            moveCount = game?.moveCount ?: 0,
+                            isWon = game?.isWon ?: false,
+                            difficulty = game?.difficulty ?: difficulty,
+                            gameStartTime = game?.startTime,
+                            gameEndTime = game?.endTime,
+                            timerSeconds = calculateElapsedSeconds(game?.startTime, game?.endTime),
+                        )
+                    }
+                }
+            }
+        }
+
+        @RequiresApi(Build.VERSION_CODES.O)
+        private fun startTimer() {
+            viewModelScope.launch {
+                while (isActive) {
+                    updateState {
+                        if (gameStartTime != null && !isWon) {
+                            copy(
+                                timerSeconds =
+                                    calculateElapsedSeconds(
+                                        gameStartTime,
+                                        gameEndTime,
+                                    ),
+                            )
+                        } else {
+                            this
+                        }
+                    }
+                    delay(TIMER_UPDATE_INTERVAL_MILLIS.milliseconds)
+                }
+            }
+        }
 
         fun clearError() {
             updateState {
@@ -108,5 +162,21 @@ class PuzzleViewModel
 
                 setLoading(false)
             }
+        }
+
+        @RequiresApi(Build.VERSION_CODES.O)
+        private fun calculateElapsedSeconds(
+            startTime: Long?,
+            endTime: Long?,
+        ): Long {
+            if (startTime == null) return 0
+
+            val effectiveEndTime = endTime ?: clock.millis()
+            return ((effectiveEndTime - startTime) / MILLIS_PER_SECOND).coerceAtLeast(0)
+        }
+
+        private companion object {
+            const val MILLIS_PER_SECOND = 1_000L
+            const val TIMER_UPDATE_INTERVAL_MILLIS = 1_000L
         }
     }

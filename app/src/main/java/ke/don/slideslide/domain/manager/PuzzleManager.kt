@@ -62,7 +62,7 @@ interface PuzzleManager {
     /**
      * Automatically solves the puzzle from the current state.
      */
-    suspend fun autoSolve()
+    suspend fun autoSolve(): List<Move>?
 
     /**
      * Clears all game data from persistence and resets the manager state.

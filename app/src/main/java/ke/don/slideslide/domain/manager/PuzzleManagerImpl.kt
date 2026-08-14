@@ -27,7 +27,6 @@ import ke.don.slideslide.domain.usecase.ShuffleUseCase
 import ke.don.slideslide.domain.usecase.SolveUseCase
 import ke.don.slideslide.domain.usecase.ValidateMoveUseCase
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import javax.inject.Inject
 
@@ -40,10 +39,9 @@ class PuzzleManagerImpl
         private val shuffleUseCase: ShuffleUseCase,
         private val solveUseCase: SolveUseCase,
     ) : PuzzleManager {
-        private var currentGameId: Long? = null
-        private var solutionMoves: MutableList<Move>? = null
-
         override suspend fun createGame(difficulty: Difficulty): Game {
+            puzzleDao.deleteAllGames()
+
             val totalTiles = difficulty.totalTiles
             val solvedTiles =
                 (0 until totalTiles).map { index ->
@@ -68,13 +66,11 @@ class PuzzleManagerImpl
             val gameId = puzzleDao.insertGame(game.toEntity())
             puzzleDao.insertTiles(shuffledTiles.map { it.toEntity(gameId) })
 
-            currentGameId = gameId
-            solutionMoves = null
             return game.copy(id = gameId)
         }
 
         override suspend fun moveTile(move: Move): Boolean {
-            val game = currentGameId?.let { puzzleDao.observeGame(it).first() }?.toDomain()
+            val game = puzzleDao.getCurrentGame()?.toDomain()
             val validationResult = game?.let { validateMoveUseCase(it, move) }
 
             return when {
@@ -85,15 +81,6 @@ class PuzzleManagerImpl
                 else -> {
                     val movingTile = validationResult.first
                     val blankTile = validationResult.second
-
-                    // Check if move matches solution path
-                    if (solutionMoves?.firstOrNull()?.fromPosition == move.fromPosition &&
-                        solutionMoves?.firstOrNull()?.toPosition == move.toPosition
-                    ) {
-                        solutionMoves?.removeAt(0)
-                    } else {
-                        solutionMoves = null
-                    }
 
                     val newMoveCount = game.moveCount + 1
                     val updatedTiles =
@@ -123,8 +110,8 @@ class PuzzleManagerImpl
         }
 
         override suspend fun shuffle() {
-            currentGameId?.let { id ->
-                val game = puzzleDao.observeGame(id).first()?.toDomain() ?: return
+            puzzleDao.getCurrentGame()?.toDomain()?.let { game ->
+                val id = game.id
                 val shuffledTiles = shuffleUseCase(game.tiles, game.difficulty)
 
                 puzzleDao.upsertGame(
@@ -138,17 +125,16 @@ class PuzzleManagerImpl
                     shuffledTiles.map { it.toEntity(id) },
                 )
                 puzzleDao.deleteMoves(id)
-                solutionMoves = null
             }
         }
 
         override suspend fun undo(): Boolean {
-            val gameId = currentGameId
+            val game = puzzleDao.getCurrentGame()?.toDomain()
+            val gameId = game?.id
             val latestMove = gameId?.let { puzzleDao.getLatestMove(it) }
-            val game = gameId?.let { puzzleDao.observeGame(it).first() }?.toDomain()
 
             return when {
-                gameId == null || latestMove == null || game == null -> {
+                game == null || latestMove == null -> {
                     false
                 }
 
@@ -169,7 +155,6 @@ class PuzzleManagerImpl
                             blankOriginalPosition = latestMove.toPosition,
                         )
 
-                        solutionMoves = null
                         true
                     }
                 }
@@ -178,45 +163,20 @@ class PuzzleManagerImpl
 
         override suspend fun reset() {
             val difficulty =
-                currentGameId
-                    ?.let { id ->
-                        puzzleDao
-                            .observeGame(id)
-                            .first()
-                            ?.toDomain()
-                            ?.difficulty
-                    }
+                puzzleDao.getCurrentGame()?.toDomain()?.difficulty
                     ?: Difficulty.EASY
 
-            clearAll()
             createGame(difficulty)
         }
 
-        override fun observeGame(): Flow<Game?> =
-            currentGameId?.let { id ->
-                puzzleDao.observeGame(id).map { it?.toDomain() }
-            } ?: kotlinx.coroutines.flow.flowOf(null)
+        override fun observeGame(): Flow<Game?> = puzzleDao.observeCurrentGame().map { it?.toDomain() }
 
-        override suspend fun bestNextMove(): Move? {
-            if (solutionMoves == null) {
-                autoSolve()
-            }
-            return solutionMoves?.firstOrNull()
-        }
+        override suspend fun bestNextMove(): Move? = autoSolve()?.firstOrNull()
 
-        override suspend fun autoSolve() {
-            val gameId = currentGameId ?: return
-            val game = puzzleDao.observeGame(gameId).first()?.toDomain() ?: return
-
-            val solution = solveUseCase(game)
-            if (solution != null) {
-                solutionMoves = solution.toMutableList()
-            }
-        }
+        override suspend fun autoSolve(): List<Move>? =
+            puzzleDao.getCurrentGame()?.toDomain()?.let { game -> solveUseCase(game) }
 
         override suspend fun clearAll() {
             puzzleDao.deleteAllGames()
-            currentGameId = null
-            solutionMoves = null
         }
     }

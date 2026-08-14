@@ -13,22 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ke.don.slideslide.ui.state
+package ke.don.slideslide.di
 
-import ke.don.slideslide.domain.model.Difficulty
-import ke.don.slideslide.domain.model.Tile
+import dagger.Module
+import dagger.Provides
+import dagger.hilt.InstallIn
+import dagger.hilt.components.SingletonComponent
+import java.time.Clock
+import javax.inject.Singleton
 
-/**
- * Represents the UI state for the puzzle screen.
- */
-data class PuzzleUiState(
-    val tiles: List<Tile> = emptyList(),
-    val moveCount: Int = 0,
-    val isWon: Boolean = false,
-    val difficulty: Difficulty = Difficulty.EASY,
-    val timerSeconds: Long = 0,
-    val gameStartTime: Long? = null,
-    val gameEndTime: Long? = null,
-    val isLoading: Boolean = false,
-    val error: String? = null,
-)
+@Module
+@InstallIn(SingletonComponent::class)
+object TimeModule {
+    @Provides
+    @Singleton
+    fun provideClock(): Clock = Clock.systemUTC()
+}
