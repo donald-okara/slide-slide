@@ -15,25 +15,38 @@ if [ ! -f "$BENCHMARK_FILE" ]; then
   exit 1
 fi
 
-# Clean up SUPABASE_URL: remove trailing slashes and the /rest/v1 suffix if it exists
-# to prevent "Invalid path" errors when we append it ourselves.
+# Clean up SUPABASE_URL
 CLEAN_URL=$(echo "$SUPABASE_URL" | sed 's#/$##' | sed 's#/rest/v1$##')
 API_URL="${CLEAN_URL}/rest/v1/user_benchmarks"
 
-# Calculate Total Score
-# Formula: Sum across all difficulties: (Success Rate * Difficulty Weight)
-# Difficulty Weights: EASY=10, MEDIUM=30, HARD=60
+# Calculate Advanced Total Score (80% Success, 20% Efficiency)
+# Thresholds:
+# EASY: 10 moves, 20ms (W=10)
+# MEDIUM: 35 moves, 150ms (W=30)
+# HARD: 100 moves, 800ms (W=60)
 TOTAL_SCORE=$(jq '
+  def calc_diff_score:
+    if .difficulty == "EASY" then {w: 10, tm: 10, tt: 20}
+    elif .difficulty == "MEDIUM" then {w: 30, tm: 35, tt: 150}
+    else {w: 60, tm: 100, tt: 800}
+    end;
+
   map(
-    (if .total_iterations > 0 then (.success_count | tonumber) / (.total_iterations | tonumber) else 0 end) *
-    (if .difficulty == "EASY" then 10 elif .difficulty == "MEDIUM" then 30 else 60 end)
+    calc_diff_score as $cfg |
+    (if .total_iterations > 0 then (.success_count | tonumber) / (.total_iterations | tonumber) else 0 end) as $sr |
+    if $sr > 0 then
+      ($sr * $cfg.w * 0.8) +
+      ($sr * (
+        ([1.0, (if .avg_moves > 0 then $cfg.tm / .avg_moves else 0 end)] | min | [0, .] | max) * ($cfg.w * 0.1) +
+        ([1.0, (if .avg_time_ms > 0 then $cfg.tt / .avg_time_ms else 0 end)] | min | [0, .] | max) * ($cfg.w * 0.1)
+      ))
+    else 0 end
   ) | add
 ' "$BENCHMARK_FILE")
 
 # Prepare JSON payload
 BENCHMARKS_JSON=$(cat "$BENCHMARK_FILE")
 
-# Use jq to build the payload with a valid ISO timestamp
 PAYLOAD=$(jq -n \
   --arg gh_slug "$GH_SLUG" \
   --argjson pr_number "$PR_NUMBER" \
@@ -48,11 +61,8 @@ PAYLOAD=$(jq -n \
   }')
 
 echo "Syncing benchmark results for $GH_SLUG to Supabase..."
-echo "Total Score: $TOTAL_SCORE"
-echo "Endpoint: $API_URL"
+echo "Calculated Advanced Score (Success + Efficiency): $TOTAL_SCORE"
 
-# Note: Prefer: resolution=merge-duplicates requires identifying the conflict column
-# via the on_conflict query parameter for clarity.
 curl -X POST "${API_URL}?on_conflict=gh_slug" \
   -H "apikey: ${SUPABASE_KEY}" \
   -H "Authorization: Bearer ${SUPABASE_KEY}" \
