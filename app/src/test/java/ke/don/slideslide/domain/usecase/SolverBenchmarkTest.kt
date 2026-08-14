@@ -67,7 +67,13 @@ class SolverBenchmarkTest {
         sb.append("| :--- | :--- | :--- | :--- |\n")
 
         results.forEach { result ->
-            sb.append("| ${result.difficulty} | ${result.status} | ${String.format(Locale.US, "%.2f", result.avgMoves)} | ${String.format(Locale.US, "%.2f", result.avgTimeMs)} |\n")
+            sb.append(
+                "| ${result.difficulty} | ${result.status} | ${String.format(
+                    Locale.US,
+                    "%.2f",
+                    result.avgMoves,
+                )} | ${String.format(Locale.US, "%.2f", result.avgTimeMs)} |\n",
+            )
         }
 
         sb.append("\n*Generated automatically by SolverBenchmarkTest*")
@@ -121,7 +127,8 @@ class SolverBenchmarkTest {
 
         println("Benchmark [${difficulty.name}]: $status, Avg Moves: $avgMoves, Avg Time: ${avgTime}ms")
 
-        val json = """
+        val json =
+            """
             {
                 "difficulty": "${difficulty.name}",
                 "status": "$status",
@@ -139,7 +146,7 @@ class SolverBenchmarkTest {
             totalIterations = iterations,
             avgMoves = avgMoves,
             avgTimeMs = avgTime,
-            json = json
+            json = json,
         )
     }
 
