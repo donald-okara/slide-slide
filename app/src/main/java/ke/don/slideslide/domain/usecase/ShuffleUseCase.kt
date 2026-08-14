@@ -17,6 +17,7 @@ package ke.don.slideslide.domain.usecase
 
 import ke.don.slideslide.domain.model.Difficulty
 import ke.don.slideslide.domain.model.Tile
+import javax.inject.Inject
 
 /**
  * Use case to perform a solvable shuffle of the puzzle tiles.
@@ -36,7 +37,7 @@ interface ShuffleUseCase {
     ): List<Tile>
 }
 
-class ShuffleUseCaseImpl : ShuffleUseCase {
+class ShuffleUseCaseImpl @Inject constructor() : ShuffleUseCase {
     companion object {
         private const val SHUFFLE_DEPTH_EASY = 100
         private const val SHUFFLE_DEPTH_MEDIUM = 200

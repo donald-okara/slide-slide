@@ -17,27 +17,30 @@ package ke.don.slideslide.di
 
 import android.content.Context
 import androidx.room.Room
+import dagger.Module
+import dagger.Provides
+import dagger.hilt.InstallIn
+import dagger.hilt.android.qualifiers.ApplicationContext
+import dagger.hilt.components.SingletonComponent
 import ke.don.slideslide.data.dao.PuzzleDao
 import ke.don.slideslide.data.database.AppDatabase
+import javax.inject.Singleton
 
-/**
- * Simple manual DI for database-related components.
- */
+@Module
+@InstallIn(SingletonComponent::class)
 object DatabaseModule {
-    private var database: AppDatabase? = null
+    @Provides
+    @Singleton
+    fun provideDatabase(
+        @ApplicationContext context: Context,
+    ): AppDatabase =
+        Room
+            .databaseBuilder(
+                context,
+                AppDatabase::class.java,
+                "slideslide.db",
+            ).build()
 
-    fun provideDatabase(context: Context): AppDatabase =
-        database ?: synchronized(this) {
-            val instance =
-                Room
-                    .databaseBuilder(
-                        context.applicationContext,
-                        AppDatabase::class.java,
-                        "slideslide.db",
-                    ).build()
-            database = instance
-            instance
-        }
-
-    fun providePuzzleDao(context: Context): PuzzleDao = provideDatabase(context).puzzleDao()
+    @Provides
+    fun providePuzzleDao(database: AppDatabase): PuzzleDao = database.puzzleDao()
 }

@@ -18,6 +18,7 @@ package ke.don.slideslide.domain.usecase
 import ke.don.slideslide.domain.model.Game
 import ke.don.slideslide.domain.model.Move
 import ke.don.slideslide.domain.model.Tile
+import javax.inject.Inject
 import kotlin.math.abs
 
 /**
@@ -41,7 +42,7 @@ interface ValidateMoveUseCase {
     ): Pair<Tile, Tile>?
 }
 
-class ValidateMoveUseCaseImpl : ValidateMoveUseCase {
+class ValidateMoveUseCaseImpl @Inject constructor() : ValidateMoveUseCase {
     override fun invoke(
         game: Game,
         move: Move,

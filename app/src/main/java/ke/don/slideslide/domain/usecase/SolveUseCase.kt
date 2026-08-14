@@ -19,6 +19,7 @@ import ke.don.slideslide.domain.model.Game
 import ke.don.slideslide.domain.model.Move
 import ke.don.slideslide.domain.model.Tile
 import java.util.PriorityQueue
+import javax.inject.Inject
 import kotlin.math.abs
 
 /**
@@ -34,7 +35,7 @@ interface SolveUseCase {
     operator fun invoke(game: Game): List<Move>?
 }
 
-class SolveUseCaseImpl : SolveUseCase {
+class SolveUseCaseImpl @Inject constructor() : SolveUseCase {
     companion object {
         private const val MAX_ITERATIONS = 50000
     }

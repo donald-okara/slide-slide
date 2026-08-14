@@ -29,8 +29,9 @@ import ke.don.slideslide.domain.usecase.ValidateMoveUseCase
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
+import javax.inject.Inject
 
-class PuzzleManagerImpl(
+class PuzzleManagerImpl @Inject constructor(
     private val puzzleDao: PuzzleDao,
     private val validateMoveUseCase: ValidateMoveUseCase,
     private val isGameOverUseCase: IsGameOverUseCase,
