@@ -1,0 +1,35 @@
+name: Solver Benchmark
+
+on:
+  pull_request:
+    branches: [ main ]
+
+permissions:
+  pull-requests: write
+
+jobs:
+  benchmark:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: gradle
+
+      - name: Grant Execute Permission for Gradlew
+        run: chmod +x gradlew
+
+      - name: Run Solver Benchmarks
+        run: ./gradlew :app:testDebugUnitTest --tests "ke.don.slideslide.domain.usecase.SolverBenchmarkTest"
+
+      - name: Post Benchmark Comment
+        uses: marocchino/sticky-pull-request-comment@v2
+        with:
+          header: solver-benchmark
+          path: solver_benchmarks.md

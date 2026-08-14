@@ -27,24 +27,55 @@ class SolverBenchmarkTest {
 
     @Test
     fun `run solver benchmarks`() {
-        val results = mutableListOf<String>()
+        val jsonResults = mutableListOf<String>()
+        val reportData = mutableListOf<BenchmarkResult>()
         val iterationsPerDifficulty = 3
 
         Difficulty.entries.forEach { difficulty ->
             val result = runBenchmarkForDifficulty(difficulty, iterationsPerDifficulty)
-            results.add(result)
+            jsonResults.add(result.json)
+            reportData.add(result)
         }
 
-        val json = results.joinToString(separator = ",\n", prefix = "[\n", postfix = "\n]")
-        val reportFile = File("../solver_benchmarks.json")
-        reportFile.writeText(json)
-        println("Benchmark report written to: ${reportFile.absolutePath}")
+        // Write JSON report
+        val json = jsonResults.joinToString(separator = ",\n", prefix = "[\n", postfix = "\n]")
+        val jsonReportFile = File("../solver_benchmarks.json")
+        jsonReportFile.writeText(json)
+        println("JSON Benchmark report written to: ${jsonReportFile.absolutePath}")
+
+        // Write Markdown report
+        val markdownReport = generateMarkdownReport(reportData)
+        val mdReportFile = File("../solver_benchmarks.md")
+        mdReportFile.writeText(markdownReport)
+        println("Markdown Benchmark report written to: ${mdReportFile.absolutePath}")
+    }
+
+    private data class BenchmarkResult(
+        val difficulty: String,
+        val status: String,
+        val avgMoves: Double,
+        val avgTimeMs: Double,
+        val json: String,
+    )
+
+    private fun generateMarkdownReport(results: List<BenchmarkResult>): String {
+        val sb = StringBuilder()
+        sb.append("## 🧩 Autosolver Benchmark Evaluation\n\n")
+        sb.append("| Difficulty | Status | Avg Moves | Avg Time (ms) |\n")
+        sb.append("| :--- | :--- | :--- | :--- |\n")
+
+        results.forEach { result ->
+            sb.append("| ${result.difficulty} | ${result.status} | ${String.format(Locale.US, "%.2f", result.avgMoves)} | ${String.format(Locale.US, "%.2f", result.avgTimeMs)} |\n")
+        }
+
+        sb.append("\n*Generated automatically by SolverBenchmarkTest*")
+        return sb.toString()
     }
 
     private fun runBenchmarkForDifficulty(
         difficulty: Difficulty,
         iterations: Int,
-    ): String {
+    ): BenchmarkResult {
         val movesList = mutableListOf<Int>()
         val timesList = mutableListOf<Long>()
         var successCount = 0
@@ -88,7 +119,7 @@ class SolverBenchmarkTest {
 
         println("Benchmark [${difficulty.name}]: $status, Avg Moves: $avgMoves, Avg Time: ${avgTime}ms")
 
-        return """
+        val json = """
             {
                 "difficulty": "${difficulty.name}",
                 "status": "$status",
@@ -96,6 +127,14 @@ class SolverBenchmarkTest {
                 "avg_time_ms": ${String.format(Locale.US, "%.2f", avgTime)}
             }
             """.trimIndent()
+
+        return BenchmarkResult(
+            difficulty = difficulty.name,
+            status = status,
+            avgMoves = avgMoves,
+            avgTimeMs = avgTime,
+            json = json
+        )
     }
 
     private fun getStatus(
