@@ -42,33 +42,35 @@ interface ValidateMoveUseCase {
     ): Pair<Tile, Tile>?
 }
 
-class ValidateMoveUseCaseImpl @Inject constructor() : ValidateMoveUseCase {
-    override fun invoke(
-        game: Game,
-        move: Move,
-    ): Pair<Tile, Tile>? {
-        val fromTile = game.tiles.find { it.currentPosition == move.fromPosition }
-        val toTile = game.tiles.find { it.currentPosition == move.toPosition }
+class ValidateMoveUseCaseImpl
+    @Inject
+    constructor() : ValidateMoveUseCase {
+        override fun invoke(
+            game: Game,
+            move: Move,
+        ): Pair<Tile, Tile>? {
+            val fromTile = game.tiles.find { it.currentPosition == move.fromPosition }
+            val toTile = game.tiles.find { it.currentPosition == move.toPosition }
 
-        return when {
-            fromTile == null || toTile == null -> null
-            fromTile.isBlank || !toTile.isBlank -> null
-            else -> {
-                val gridSize = game.difficulty.size
+            return when {
+                fromTile == null || toTile == null -> null
+                fromTile.isBlank || !toTile.isBlank -> null
+                else -> {
+                    val gridSize = game.difficulty.size
 
-                val fromRow = move.fromPosition / gridSize
-                val fromCol = move.fromPosition % gridSize
+                    val fromRow = move.fromPosition / gridSize
+                    val fromCol = move.fromPosition % gridSize
 
-                val toRow = move.toPosition / gridSize
-                val toCol = move.toPosition % gridSize
+                    val toRow = move.toPosition / gridSize
+                    val toCol = move.toPosition % gridSize
 
-                val rowDiff = abs(fromRow - toRow)
-                val colDiff = abs(fromCol - toCol)
+                    val rowDiff = abs(fromRow - toRow)
+                    val colDiff = abs(fromCol - toCol)
 
-                val isAdjacent = (rowDiff == 1 && colDiff == 0) || (rowDiff == 0 && colDiff == 1)
+                    val isAdjacent = (rowDiff == 1 && colDiff == 0) || (rowDiff == 0 && colDiff == 1)
 
-                if (isAdjacent) fromTile to toTile else null
+                    if (isAdjacent) fromTile to toTile else null
+                }
             }
         }
     }
-}
