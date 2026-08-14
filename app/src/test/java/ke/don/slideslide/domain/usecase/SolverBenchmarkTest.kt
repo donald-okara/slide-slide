@@ -53,6 +53,8 @@ class SolverBenchmarkTest {
     private data class BenchmarkResult(
         val difficulty: String,
         val status: String,
+        val successCount: Int,
+        val totalIterations: Int,
         val avgMoves: Double,
         val avgTimeMs: Double,
         val json: String,
@@ -123,6 +125,8 @@ class SolverBenchmarkTest {
             {
                 "difficulty": "${difficulty.name}",
                 "status": "$status",
+                "success_count": $successCount,
+                "total_iterations": $iterations,
                 "avg_moves": ${String.format(Locale.US, "%.2f", avgMoves)},
                 "avg_time_ms": ${String.format(Locale.US, "%.2f", avgTime)}
             }
@@ -131,6 +135,8 @@ class SolverBenchmarkTest {
         return BenchmarkResult(
             difficulty = difficulty.name,
             status = status,
+            successCount = successCount,
+            totalIterations = iterations,
             avgMoves = avgMoves,
             avgTimeMs = avgTime,
             json = json

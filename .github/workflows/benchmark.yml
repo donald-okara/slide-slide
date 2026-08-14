@@ -33,3 +33,11 @@ jobs:
         with:
           header: solver-benchmark
           path: solver_benchmarks.md
+
+      - name: Sync to Supabase
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+          GH_SLUG: ${{ github.event.pull_request.user.login }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: .github/scripts/sync_to_supabase.sh
