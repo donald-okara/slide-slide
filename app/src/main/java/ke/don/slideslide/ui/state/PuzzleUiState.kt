@@ -21,7 +21,7 @@ import ke.don.slideslide.domain.model.Tile
 /**
  * Represents the UI state for the puzzle screen.
  */
-data class GameUiState(
+data class PuzzleUiState(
     val tiles: List<Tile> = emptyList(),
     val moveCount: Int = 0,
     val isWon: Boolean = false,
