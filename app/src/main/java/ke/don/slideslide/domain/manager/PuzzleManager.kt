@@ -47,6 +47,8 @@ interface PuzzleManager {
      */
     suspend fun undo(): Boolean
 
+    suspend fun reset()
+
     /**
      * Observes the current game state.
      */

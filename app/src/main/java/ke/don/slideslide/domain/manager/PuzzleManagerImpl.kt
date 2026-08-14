@@ -78,7 +78,10 @@ class PuzzleManagerImpl
             val validationResult = game?.let { validateMoveUseCase(it, move) }
 
             return when {
-                game == null || validationResult == null -> false
+                game == null || validationResult == null -> {
+                    false
+                }
+
                 else -> {
                     val movingTile = validationResult.first
                     val blankTile = validationResult.second
@@ -145,7 +148,10 @@ class PuzzleManagerImpl
             val game = gameId?.let { puzzleDao.observeGame(it).first() }?.toDomain()
 
             return when {
-                gameId == null || latestMove == null || game == null -> false
+                gameId == null || latestMove == null || game == null -> {
+                    false
+                }
+
                 else -> {
                     val movingTile = game.tiles.find { it.currentPosition == latestMove.toPosition }
                     val blankTile = game.tiles.find { it.currentPosition == latestMove.fromPosition }
@@ -168,6 +174,22 @@ class PuzzleManagerImpl
                     }
                 }
             }
+        }
+
+        override suspend fun reset() {
+            val difficulty =
+                currentGameId
+                    ?.let { id ->
+                        puzzleDao
+                            .observeGame(id)
+                            .first()
+                            ?.toDomain()
+                            ?.difficulty
+                    }
+                    ?: Difficulty.EASY
+
+            clearAll()
+            createGame(difficulty)
         }
 
         override fun observeGame(): Flow<Game?> =

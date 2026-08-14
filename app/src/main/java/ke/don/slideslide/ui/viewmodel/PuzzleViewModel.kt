@@ -91,6 +91,12 @@ class PuzzleViewModel
             }
         }
 
+        fun reset() {
+            executeAction {
+                puzzleManager.reset()
+            }
+        }
+
         private fun executeAction(action: suspend () -> Unit) {
             viewModelScope.launch {
                 setLoading(true)

@@ -152,6 +152,37 @@ class PuzzleManagerImplTest {
         }
 
     @Test
+    fun `test reset creates a fresh game with the same difficulty`() =
+        runTest {
+            val initialGame = puzzleManager.createGame(Difficulty.MEDIUM)
+            val initialObserved = puzzleManager.observeGame().first()!!
+            val blankTile = initialObserved.tiles.find { it.isBlank }!!
+            val adjacentPosition =
+                if (blankRow(blankTile, 4) > 0) {
+                    blankTile.currentPosition - 4
+                } else {
+                    blankTile.currentPosition + 4
+                }
+
+            puzzleManager.moveTile(
+                Move(
+                    gameId = initialGame.id,
+                    fromPosition = adjacentPosition,
+                    toPosition = blankTile.currentPosition,
+                ),
+            )
+
+            puzzleManager.reset()
+
+            val resetGame = puzzleManager.observeGame().first()
+            assertNotNull(resetGame)
+            assertTrue(resetGame!!.id != initialGame.id)
+            assertEquals(Difficulty.MEDIUM, resetGame.difficulty)
+            assertEquals(0, resetGame.moveCount)
+            assertTrue(!resetGame.isWon)
+        }
+
+    @Test
     fun `test clearAll deletes all data`() =
         runTest {
             puzzleManager.createGame(Difficulty.EASY)
