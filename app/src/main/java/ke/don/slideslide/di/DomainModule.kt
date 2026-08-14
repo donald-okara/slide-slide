@@ -18,6 +18,7 @@ package ke.don.slideslide.di
 import dagger.Binds
 import dagger.Module
 import dagger.hilt.InstallIn
+import dagger.hilt.android.scopes.ViewModelScoped
 import dagger.hilt.components.SingletonComponent
 import ke.don.slideslide.domain.manager.PuzzleManager
 import ke.don.slideslide.domain.manager.PuzzleManagerImpl
@@ -51,6 +52,6 @@ abstract class DomainModule {
     abstract fun bindValidateMoveUseCase(impl: ValidateMoveUseCaseImpl): ValidateMoveUseCase
 
     @Binds
-    @Singleton
+    @ViewModelScoped
     abstract fun bindPuzzleManager(impl: PuzzleManagerImpl): PuzzleManager
 }
