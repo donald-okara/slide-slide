@@ -1,0 +1,55 @@
+name: Solver Benchmark
+
+on:
+  pull_request:
+    branches: [ main ]
+
+permissions:
+  pull-requests: write
+
+jobs:
+  benchmark:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Verify Benchmark Integrity
+        run: |
+          git fetch origin main:main
+          FILES_TO_CHECK="app/src/test/java/ke/don/slideslide/domain/usecase/SolverBenchmarkTest.kt .github/workflows/benchmark.yml .github/scripts/sync_to_supabase.sh"
+          if ! git diff --quiet main -- $FILES_TO_CHECK; then
+            echo "❌ ERROR: Evaluation pipeline files have been modified!"
+            echo "Tampering with benchmark criteria, workflows, or scoring logic is strictly prohibited."
+            exit 1
+          fi
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: gradle
+
+      - name: Grant Execute Permission for Gradlew
+        run: chmod +x gradlew
+
+      - name: Run Solver Benchmarks
+        run: ./gradlew :app:testDebugUnitTest --tests "ke.don.slideslide.domain.usecase.SolverBenchmarkTest"
+
+      - name: Post Benchmark Comment
+        uses: marocchino/sticky-pull-request-comment@v2
+        with:
+          header: solver-benchmark
+          path: solver_benchmarks.md
+
+      - name: Sync to Supabase
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+          GH_SLUG: ${{ github.event.pull_request.user.login }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: .github/scripts/sync_to_supabase.sh
