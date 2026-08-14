@@ -15,7 +15,10 @@
  */
 package ke.don.slideslide.di
 
-import android.content.Context
+import dagger.Binds
+import dagger.Module
+import dagger.hilt.InstallIn
+import dagger.hilt.components.SingletonComponent
 import ke.don.slideslide.domain.manager.PuzzleManager
 import ke.don.slideslide.domain.manager.PuzzleManagerImpl
 import ke.don.slideslide.domain.usecase.IsGameOverUseCase
@@ -26,25 +29,28 @@ import ke.don.slideslide.domain.usecase.SolveUseCase
 import ke.don.slideslide.domain.usecase.SolveUseCaseImpl
 import ke.don.slideslide.domain.usecase.ValidateMoveUseCase
 import ke.don.slideslide.domain.usecase.ValidateMoveUseCaseImpl
+import javax.inject.Singleton
 
-/**
- * Manual DI for domain-related components.
- */
-object DomainModule {
-    fun provideIsGameOverUseCase(): IsGameOverUseCase = IsGameOverUseCaseImpl()
+@Module
+@InstallIn(SingletonComponent::class)
+abstract class DomainModule {
+    @Binds
+    @Singleton
+    abstract fun bindIsGameOverUseCase(impl: IsGameOverUseCaseImpl): IsGameOverUseCase
 
-    fun provideShuffleUseCase(): ShuffleUseCase = ShuffleUseCaseImpl()
+    @Binds
+    @Singleton
+    abstract fun bindShuffleUseCase(impl: ShuffleUseCaseImpl): ShuffleUseCase
 
-    fun provideSolveUseCase(): SolveUseCase = SolveUseCaseImpl()
+    @Binds
+    @Singleton
+    abstract fun bindSolveUseCase(impl: SolveUseCaseImpl): SolveUseCase
 
-    fun provideValidateMoveUseCase(): ValidateMoveUseCase = ValidateMoveUseCaseImpl()
+    @Binds
+    @Singleton
+    abstract fun bindValidateMoveUseCase(impl: ValidateMoveUseCaseImpl): ValidateMoveUseCase
 
-    fun providePuzzleManager(context: Context): PuzzleManager =
-        PuzzleManagerImpl(
-            puzzleDao = DatabaseModule.providePuzzleDao(context),
-            validateMoveUseCase = provideValidateMoveUseCase(),
-            isGameOverUseCase = provideIsGameOverUseCase(),
-            shuffleUseCase = provideShuffleUseCase(),
-            solveUseCase = provideSolveUseCase(),
-        )
+    @Binds
+    @Singleton
+    abstract fun bindPuzzleManager(impl: PuzzleManagerImpl): PuzzleManager
 }

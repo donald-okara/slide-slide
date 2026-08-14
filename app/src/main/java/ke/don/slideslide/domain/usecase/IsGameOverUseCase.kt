@@ -16,6 +16,7 @@
 package ke.don.slideslide.domain.usecase
 
 import ke.don.slideslide.domain.model.Tile
+import javax.inject.Inject
 
 /**
  * Use case to determine if the puzzle is in its solved state.
@@ -30,9 +31,11 @@ interface IsGameOverUseCase {
     operator fun invoke(tiles: List<Tile>): Boolean
 }
 
-class IsGameOverUseCaseImpl : IsGameOverUseCase {
-    override fun invoke(tiles: List<Tile>): Boolean {
-        if (tiles.isEmpty()) return false
-        return tiles.all { it.currentPosition == it.correctPosition }
+class IsGameOverUseCaseImpl
+    @Inject
+    constructor() : IsGameOverUseCase {
+        override fun invoke(tiles: List<Tile>): Boolean {
+            if (tiles.isEmpty()) return false
+            return tiles.all { it.currentPosition == it.correctPosition }
+        }
     }
-}
