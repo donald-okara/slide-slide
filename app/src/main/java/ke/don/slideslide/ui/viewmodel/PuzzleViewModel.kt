@@ -24,6 +24,7 @@ import ke.don.slideslide.domain.manager.PuzzleManager
 import ke.don.slideslide.domain.model.Difficulty
 import ke.don.slideslide.domain.model.Move
 import ke.don.slideslide.ui.state.PuzzleUiState
+import ke.don.slideslide.ui.utils.calculateElapsedSeconds
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -64,7 +65,12 @@ class PuzzleViewModel
                             difficulty = game?.difficulty ?: difficulty,
                             gameStartTime = game?.startTime,
                             gameEndTime = game?.endTime,
-                            timerSeconds = calculateElapsedSeconds(game?.startTime, game?.endTime),
+                            timerSeconds =
+                                calculateElapsedSeconds(
+                                    game?.startTime,
+                                    game?.endTime,
+                                    clock,
+                                ),
                         )
                     }
                 }
@@ -79,10 +85,7 @@ class PuzzleViewModel
                         if (gameStartTime != null && !isWon) {
                             copy(
                                 timerSeconds =
-                                    calculateElapsedSeconds(
-                                        gameStartTime,
-                                        gameEndTime,
-                                    ),
+                                    calculateElapsedSeconds(gameStartTime, gameEndTime, clock),
                             )
                         } else {
                             this
@@ -93,90 +96,130 @@ class PuzzleViewModel
             }
         }
 
-        fun clearError() {
-            updateState {
-                copy(error = null)
-            }
-        }
-
-        private fun updateState(state: PuzzleUiState.() -> PuzzleUiState) {
-            _uiState.update(state)
-        }
-
-        private fun setLoading(isLoading: Boolean) {
-            updateState {
-                copy(isLoading = isLoading)
-            }
-        }
-
-        private fun handleError(throwable: Throwable) {
-            updateState {
-                copy(
-                    isLoading = false,
-                    error = throwable.message ?: "Something went wrong",
-                )
-            }
-        }
-
         fun createGame(difficulty: Difficulty) {
             executeAction {
                 puzzleManager.createGame(difficulty)
                 updateState {
-                    copy(difficulty = difficulty)
+                    copy(
+                        difficulty = difficulty,
+                        solutionMoves = emptyList(),
+                    )
                 }
             }
         }
 
         fun moveTile(move: Move) {
             executeAction {
-                puzzleManager.moveTile(move)
+                if (puzzleManager.moveTile(move)) {
+                    updateState {
+                        val recommendedMove = solutionMoves.firstOrNull()
+                        val followsRecommendation =
+                            recommendedMove != null &&
+                                recommendedMove.fromPosition == move.fromPosition &&
+                                recommendedMove.toPosition == move.toPosition
+
+                        copy(
+                            solutionMoves =
+                                when {
+                                    recommendedMove == null -> solutionMoves
+                                    followsRecommendation -> solutionMoves.drop(1)
+                                    else -> emptyList()
+                                },
+                        )
+                    }
+                }
             }
         }
 
         fun shuffle() {
             executeAction {
                 puzzleManager.shuffle()
+                updateState {
+                    copy(solutionMoves = emptyList())
+                }
             }
         }
 
         fun undo() {
             executeAction {
-                puzzleManager.undo()
+                if (puzzleManager.undo()) {
+                    updateState {
+                        copy(solutionMoves = emptyList())
+                    }
+                }
             }
         }
 
         fun reset() {
             executeAction {
                 puzzleManager.reset()
+                updateState {
+                    copy(solutionMoves = emptyList())
+                }
+            }
+        }
+
+        fun clearAll() {
+            executeAction {
+                puzzleManager.clearAll()
+                updateState {
+                    copy(
+                        tiles = emptyList(),
+                        moveCount = 0,
+                        isWon = false,
+                        timerSeconds = 0,
+                        gameStartTime = null,
+                        gameEndTime = null,
+                        solutionMoves = emptyList(),
+                    )
+                }
+            }
+        }
+
+        fun requestSolution() {
+            executeAction {
+                val solution = puzzleManager.autoSolve().orEmpty()
+                updateState {
+                    copy(
+                        solutionMoves = solution,
+                    )
+                }
+            }
+        }
+
+        private fun updateState(reducer: PuzzleUiState.() -> PuzzleUiState) {
+            _uiState.update(reducer)
+        }
+
+        private fun handleError(throwable: Throwable? = null) {
+            updateState {
+                copy(
+                    isLoading = throwable == null,
+                    error = throwable?.message ?: if (throwable == null) null else "Something went wrong",
+                )
             }
         }
 
         private fun executeAction(action: suspend () -> Unit) {
             viewModelScope.launch {
-                setLoading(true)
-                clearError()
+                updateState {
+                    copy(
+                        isLoading = true,
+                        error = null,
+                    )
+                }
 
                 runCatching {
                     action()
                 }.onFailure(::handleError)
 
-                setLoading(false)
+                updateState {
+                    copy(isLoading = false)
+                }
             }
         }
 
-        @RequiresApi(Build.VERSION_CODES.O)
-        private fun calculateElapsedSeconds(
-            startTime: Long?,
-            endTime: Long?,
-        ): Long {
-            if (startTime == null) return 0
-
-            val effectiveEndTime = endTime ?: clock.millis()
-            return ((effectiveEndTime - startTime) / MILLIS_PER_SECOND).coerceAtLeast(0)
-        }
-
         private companion object {
-            const val MILLIS_PER_SECOND = 1_000L
             const val TIMER_UPDATE_INTERVAL_MILLIS = 1_000L
         }
     }

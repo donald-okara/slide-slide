@@ -104,6 +104,50 @@ class PuzzleViewModelTest {
             assertEquals(4L, viewModel.uiState.value.timerSeconds)
         }
 
+    @Test
+    fun `recommendation is consumed by a matching move and cleared by a different move`() =
+        runTest(testDispatcher) {
+            val manager = FakePuzzleManager()
+            val firstMove = Move(gameId = 1L, fromPosition = 1, toPosition = 0)
+            val secondMove = Move(gameId = 1L, fromPosition = 2, toPosition = 0)
+            manager.solution = listOf(firstMove, secondMove)
+            val viewModel = PuzzleViewModel(manager, TestClock(0L))
+
+            viewModel.requestSolution()
+            runCurrent()
+            assertEquals(2, viewModel.uiState.value.solutionMoves.size)
+
+            viewModel.moveTile(firstMove)
+            runCurrent()
+            assertEquals(listOf(secondMove), viewModel.uiState.value.solutionMoves)
+
+            viewModel.moveTile(
+                Move(gameId = 1L, fromPosition = 3, toPosition = 0),
+            )
+            runCurrent()
+            assertEquals(emptyList<Move>(), viewModel.uiState.value.solutionMoves)
+            viewModel.viewModelScope.cancel()
+        }
+
+    @Test
+    fun `clear all removes recommendations from UI state`() =
+        runTest(testDispatcher) {
+            val manager = FakePuzzleManager()
+            manager.solution = listOf(Move(gameId = 1L, fromPosition = 1, toPosition = 0))
+            val viewModel = PuzzleViewModel(manager, TestClock(0L))
+
+            viewModel.requestSolution()
+            runCurrent()
+            assertEquals(1, viewModel.uiState.value.solutionMoves.size)
+
+            viewModel.clearAll()
+            runCurrent()
+
+            assertEquals(emptyList<Move>(), viewModel.uiState.value.solutionMoves)
+            assertEquals(emptyList<Tile>(), viewModel.uiState.value.tiles)
+            viewModel.viewModelScope.cancel()
+        }
+
     private class TestClock(
         var currentTimeMillis: Long,
     ) : Clock() {
@@ -116,6 +160,7 @@ class PuzzleViewModelTest {
 
     private class FakePuzzleManager : PuzzleManager {
         private val gameState = MutableStateFlow<Game?>(null)
+        var solution: List<Move> = emptyList()
 
         override fun observeGame(): Flow<Game?> = gameState.asStateFlow()
 
@@ -137,7 +182,7 @@ class PuzzleViewModelTest {
 
         override suspend fun createGame(difficulty: Difficulty): Game = error("Not used in this test")
 
-        override suspend fun moveTile(move: Move): Boolean = error("Not used in this test")
+        override suspend fun moveTile(move: Move): Boolean = true
 
         override suspend fun shuffle() = error("Not used in this test")
 
@@ -147,9 +192,9 @@ class PuzzleViewModelTest {
 
         override suspend fun bestNextMove(): Move = error("Not used in this test")
 
-        override suspend fun autoSolve(): List<Move> = error("Not used in this test")
+        override suspend fun autoSolve(): List<Move> = solution
 
-        override suspend fun clearAll() = error("Not used in this test")
+        override suspend fun clearAll() = Unit
 
         private fun emptyTiles(): List<Tile> = emptyList()
     }

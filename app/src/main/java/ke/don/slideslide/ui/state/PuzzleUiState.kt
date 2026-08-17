@@ -16,6 +16,7 @@
 package ke.don.slideslide.ui.state
 
 import ke.don.slideslide.domain.model.Difficulty
+import ke.don.slideslide.domain.model.Move
 import ke.don.slideslide.domain.model.Tile
 
 /**
@@ -29,6 +30,7 @@ data class PuzzleUiState(
     val timerSeconds: Long = 0,
     val gameStartTime: Long? = null,
     val gameEndTime: Long? = null,
+    val solutionMoves: List<Move> = emptyList(),
     val isLoading: Boolean = false,
     val error: String? = null,
 )
