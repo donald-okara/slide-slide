@@ -36,6 +36,14 @@ interface PuzzleDao {
     @Query("SELECT * FROM games WHERE id = :gameId")
     fun observeGame(gameId: Long): Flow<GameWithTiles?>
 
+    @Transaction
+    @Query("SELECT * FROM games ORDER BY id DESC LIMIT 1")
+    fun observeCurrentGame(): Flow<GameWithTiles?>
+
+    @Transaction
+    @Query("SELECT * FROM games ORDER BY id DESC LIMIT 1")
+    suspend fun getCurrentGame(): GameWithTiles?
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertGame(game: GameEntity): Long
 

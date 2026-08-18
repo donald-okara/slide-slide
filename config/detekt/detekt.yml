@@ -13,6 +13,9 @@ complexity:
   LargeClass:
     active: true
     threshold: 600
+  TooManyFunctions:
+    active: true
+    thresholdInClasses: 15
   LongMethod:
     active: true
     threshold: 60

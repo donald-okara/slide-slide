@@ -16,17 +16,21 @@
 package ke.don.slideslide.ui.state
 
 import ke.don.slideslide.domain.model.Difficulty
+import ke.don.slideslide.domain.model.Move
 import ke.don.slideslide.domain.model.Tile
 
 /**
  * Represents the UI state for the puzzle screen.
  */
-data class GameUiState(
+data class PuzzleUiState(
     val tiles: List<Tile> = emptyList(),
     val moveCount: Int = 0,
     val isWon: Boolean = false,
     val difficulty: Difficulty = Difficulty.EASY,
     val timerSeconds: Long = 0,
+    val gameStartTime: Long? = null,
+    val gameEndTime: Long? = null,
+    val solutionMoves: List<Move> = emptyList(),
     val isLoading: Boolean = false,
     val error: String? = null,
 )
