@@ -15,8 +15,11 @@
  */
 package ke.don.slideslide.ui.viewmodel
 
+import android.net.Uri
 import androidx.arch.core.executor.testing.InstantTaskExecutorRule
 import androidx.lifecycle.viewModelScope
+import ke.don.slideslide.domain.image.BitmapCacheImpl
+import ke.don.slideslide.domain.image.BitmapSlicerImpl
 import ke.don.slideslide.domain.manager.PuzzleManager
 import ke.don.slideslide.domain.model.Difficulty
 import ke.don.slideslide.domain.model.Game
@@ -65,7 +68,7 @@ class PuzzleViewModelTest {
         runTest(testDispatcher) {
             val clock = TestClock(1_000L)
             val manager = FakePuzzleManager()
-            val viewModel = PuzzleViewModel(manager, clock)
+            val viewModel = createViewModel(manager, clock)
 
             manager.emitGame(startTime = 1_000L)
             runCurrent()
@@ -85,7 +88,7 @@ class PuzzleViewModelTest {
         runTest(testDispatcher) {
             val clock = TestClock(5_000L)
             val manager = FakePuzzleManager()
-            val viewModel = PuzzleViewModel(manager, clock)
+            val viewModel = createViewModel(manager, clock)
 
             manager.emitGame(
                 startTime = 1_000L,
@@ -111,7 +114,7 @@ class PuzzleViewModelTest {
             val firstMove = Move(gameId = 1L, fromPosition = 1, toPosition = 0)
             val secondMove = Move(gameId = 1L, fromPosition = 2, toPosition = 0)
             manager.solution = listOf(firstMove, secondMove)
-            val viewModel = PuzzleViewModel(manager, TestClock(0L))
+            val viewModel = createViewModel(manager, TestClock(0L))
 
             viewModel.requestSolution()
             runCurrent()
@@ -134,7 +137,7 @@ class PuzzleViewModelTest {
         runTest(testDispatcher) {
             val manager = FakePuzzleManager()
             manager.solution = listOf(Move(gameId = 1L, fromPosition = 1, toPosition = 0))
-            val viewModel = PuzzleViewModel(manager, TestClock(0L))
+            val viewModel = createViewModel(manager, TestClock(0L))
 
             viewModel.requestSolution()
             runCurrent()
@@ -147,6 +150,45 @@ class PuzzleViewModelTest {
             assertEquals(emptyList<Tile>(), viewModel.uiState.value.tiles)
             viewModel.viewModelScope.cancel()
         }
+
+    @Test
+    fun `select image stores the selected uri in UI state`() =
+        runTest(testDispatcher) {
+            val viewModel = createViewModel(FakePuzzleManager(), TestClock(0L))
+            val imageUri = Uri.parse("content://images/1")
+            runCurrent()
+
+            viewModel.selectImage(imageUri)
+
+            assertEquals(imageUri, viewModel.uiState.value.selectedImageUri)
+            viewModel.viewModelScope.cancel()
+            runCurrent()
+        }
+
+    @Test
+    fun `clear selected image removes the uri from UI state`() =
+        runTest(testDispatcher) {
+            val viewModel = createViewModel(FakePuzzleManager(), TestClock(0L))
+            runCurrent()
+            viewModel.selectImage(Uri.parse("content://images/1"))
+
+            viewModel.clearSelectedImage()
+
+            assertEquals(null, viewModel.uiState.value.selectedImageUri)
+            viewModel.viewModelScope.cancel()
+            runCurrent()
+        }
+
+    private fun createViewModel(
+        manager: PuzzleManager,
+        clock: Clock,
+    ): PuzzleViewModel =
+        PuzzleViewModel(
+            puzzleManager = manager,
+            clock = clock,
+            bitmapSlicer = BitmapSlicerImpl(),
+            bitmapCache = BitmapCacheImpl(),
+        )
 
     private class TestClock(
         var currentTimeMillis: Long,

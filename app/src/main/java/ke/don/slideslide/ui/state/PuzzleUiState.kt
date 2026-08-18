@@ -15,6 +15,8 @@
  */
 package ke.don.slideslide.ui.state
 
+import android.graphics.Bitmap
+import android.net.Uri
 import ke.don.slideslide.domain.model.Difficulty
 import ke.don.slideslide.domain.model.Move
 import ke.don.slideslide.domain.model.Tile
@@ -31,6 +33,8 @@ data class PuzzleUiState(
     val gameStartTime: Long? = null,
     val gameEndTime: Long? = null,
     val solutionMoves: List<Move> = emptyList(),
+    val selectedImageUri: Uri? = null,
+    val imageTiles: List<Bitmap> = emptyList(),
     val isLoading: Boolean = false,
     val error: String? = null,
 )
