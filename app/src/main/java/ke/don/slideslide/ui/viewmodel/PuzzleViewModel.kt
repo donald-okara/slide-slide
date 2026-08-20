@@ -15,11 +15,15 @@
  */
 package ke.don.slideslide.ui.viewmodel
 
+import android.graphics.Bitmap
+import android.net.Uri
 import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import ke.don.slideslide.domain.image.BitmapCache
+import ke.don.slideslide.domain.image.BitmapSlicer
 import ke.don.slideslide.domain.manager.PuzzleManager
 import ke.don.slideslide.domain.model.Difficulty
 import ke.don.slideslide.domain.model.Move
@@ -43,6 +47,8 @@ class PuzzleViewModel
     constructor(
         private val puzzleManager: PuzzleManager,
         private val clock: Clock,
+        private val bitmapSlicer: BitmapSlicer,
+        private val bitmapCache: BitmapCache,
     ) : ViewModel() {
         private val _uiState = MutableStateFlow(PuzzleUiState())
 
@@ -103,8 +109,49 @@ class PuzzleViewModel
                     copy(
                         difficulty = difficulty,
                         solutionMoves = emptyList(),
+                        imageTiles = emptyList(),
                     )
                 }
+            }
+        }
+
+        fun selectImage(uri: Uri) {
+            updateState {
+                copy(
+                    selectedImageUri = uri,
+                    imageTiles = emptyList(),
+                    error = null,
+                )
+            }
+        }
+
+        fun processSelectedImage(
+            bitmap: Bitmap,
+            difficulty: Difficulty,
+        ) {
+            executeAction {
+                val imageUri = uiState.value.selectedImageUri ?: error("No image selected")
+                val tiles =
+                    bitmapCache.get(imageUri, difficulty)
+                        ?: bitmapSlicer.slice(bitmap, difficulty).also { slicedTiles ->
+                            bitmapCache.put(imageUri, difficulty, slicedTiles)
+                        }
+
+                updateState {
+                    copy(
+                        imageTiles = tiles,
+                        difficulty = difficulty,
+                    )
+                }
+            }
+        }
+
+        fun clearSelectedImage() {
+            updateState {
+                copy(
+                    selectedImageUri = null,
+                    imageTiles = emptyList(),
+                )
             }
         }
 
@@ -171,6 +218,8 @@ class PuzzleViewModel
                         gameStartTime = null,
                         gameEndTime = null,
                         solutionMoves = emptyList(),
+                        selectedImageUri = null,
+                        imageTiles = emptyList(),
                     )
                 }
             }

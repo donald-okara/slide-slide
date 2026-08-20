@@ -4,7 +4,6 @@ on:
   push:
     branches: [ main ]
   pull_request:
-    branches: [ main ]
 
 jobs:
   lint-and-test:
@@ -24,14 +23,5 @@ jobs:
       - name: Grant Execute Permission for Gradlew
         run: chmod +x gradlew
 
-      - name: Run Spotless Check
-        run: ./gradlew spotlessCheck
-
-      - name: Run ktlint Check
-        run: ./gradlew ktlintCheck
-
-      - name: Run Detekt
-        run: ./gradlew detekt
-
-      - name: Run Unit Tests
-        run: ./gradlew testDebugUnitTest
+      - name: Run Lint and Tests
+        run: ./gradlew spotlessCheck detekt testDebugUnitTest

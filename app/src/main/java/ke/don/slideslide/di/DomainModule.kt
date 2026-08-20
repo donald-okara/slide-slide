@@ -19,6 +19,10 @@ import dagger.Binds
 import dagger.Module
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
+import ke.don.slideslide.domain.image.BitmapCache
+import ke.don.slideslide.domain.image.BitmapCacheImpl
+import ke.don.slideslide.domain.image.BitmapSlicer
+import ke.don.slideslide.domain.image.BitmapSlicerImpl
 import ke.don.slideslide.domain.manager.PuzzleManager
 import ke.don.slideslide.domain.manager.PuzzleManagerImpl
 import ke.don.slideslide.domain.usecase.IsGameOverUseCase
@@ -34,6 +38,14 @@ import javax.inject.Singleton
 @Module
 @InstallIn(SingletonComponent::class)
 abstract class DomainModule {
+    @Binds
+    @Singleton
+    abstract fun bindBitmapCache(impl: BitmapCacheImpl): BitmapCache
+
+    @Binds
+    @Singleton
+    abstract fun bindBitmapSlicer(impl: BitmapSlicerImpl): BitmapSlicer
+
     @Binds
     @Singleton
     abstract fun bindIsGameOverUseCase(impl: IsGameOverUseCaseImpl): IsGameOverUseCase

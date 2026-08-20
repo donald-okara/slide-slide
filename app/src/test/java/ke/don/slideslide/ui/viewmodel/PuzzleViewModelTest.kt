@@ -15,8 +15,11 @@
  */
 package ke.don.slideslide.ui.viewmodel
 
+import android.net.Uri
 import androidx.arch.core.executor.testing.InstantTaskExecutorRule
 import androidx.lifecycle.viewModelScope
+import ke.don.slideslide.domain.image.BitmapCacheImpl
+import ke.don.slideslide.domain.image.BitmapSlicerImpl
 import ke.don.slideslide.domain.manager.PuzzleManager
 import ke.don.slideslide.domain.model.Difficulty
 import ke.don.slideslide.domain.model.Game
@@ -38,12 +41,15 @@ import org.junit.Assert.assertEquals
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
+import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
 import java.time.Clock
 import java.time.Instant
 import java.time.ZoneId
 import kotlin.time.Duration.Companion.milliseconds
 
 @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
+@RunWith(RobolectricTestRunner::class)
 class PuzzleViewModelTest {
     @get:Rule
     val instantTaskExecutorRule = InstantTaskExecutorRule()
@@ -65,19 +71,22 @@ class PuzzleViewModelTest {
         runTest(testDispatcher) {
             val clock = TestClock(1_000L)
             val manager = FakePuzzleManager()
-            val viewModel = PuzzleViewModel(manager, clock)
+            val viewModel = createViewModel(manager, clock)
 
-            manager.emitGame(startTime = 1_000L)
-            runCurrent()
+            try {
+                manager.emitGame(startTime = 1_000L)
+                runCurrent()
 
-            assertEquals(0L, viewModel.uiState.value.timerSeconds)
+                assertEquals(0L, viewModel.uiState.value.timerSeconds)
 
-            clock.currentTimeMillis = 4_000L
-            advanceTimeBy(1_000L.milliseconds)
-            runCurrent()
+                clock.currentTimeMillis = 4_000L
+                advanceTimeBy(1_000L.milliseconds)
+                runCurrent()
 
-            assertEquals(3L, viewModel.uiState.value.timerSeconds)
-            viewModel.viewModelScope.cancel()
+                assertEquals(3L, viewModel.uiState.value.timerSeconds)
+            } finally {
+                viewModel.viewModelScope.cancel()
+            }
         }
 
     @Test
@@ -85,23 +94,26 @@ class PuzzleViewModelTest {
         runTest(testDispatcher) {
             val clock = TestClock(5_000L)
             val manager = FakePuzzleManager()
-            val viewModel = PuzzleViewModel(manager, clock)
+            val viewModel = createViewModel(manager, clock)
 
-            manager.emitGame(
-                startTime = 1_000L,
-                endTime = 5_000L,
-                isWon = true,
-            )
-            runCurrent()
+            try {
+                manager.emitGame(
+                    startTime = 1_000L,
+                    endTime = 5_000L,
+                    isWon = true,
+                )
+                runCurrent()
 
-            assertEquals(4L, viewModel.uiState.value.timerSeconds)
-            viewModel.viewModelScope.cancel()
+                assertEquals(4L, viewModel.uiState.value.timerSeconds)
 
-            clock.currentTimeMillis = 20_000L
-            advanceTimeBy(1_000L.milliseconds)
-            runCurrent()
+                clock.currentTimeMillis = 20_000L
+                advanceTimeBy(1_000L.milliseconds)
+                runCurrent()
 
-            assertEquals(4L, viewModel.uiState.value.timerSeconds)
+                assertEquals(4L, viewModel.uiState.value.timerSeconds)
+            } finally {
+                viewModel.viewModelScope.cancel()
+            }
         }
 
     @Test
@@ -111,22 +123,25 @@ class PuzzleViewModelTest {
             val firstMove = Move(gameId = 1L, fromPosition = 1, toPosition = 0)
             val secondMove = Move(gameId = 1L, fromPosition = 2, toPosition = 0)
             manager.solution = listOf(firstMove, secondMove)
-            val viewModel = PuzzleViewModel(manager, TestClock(0L))
+            val viewModel = createViewModel(manager, TestClock(0L))
 
-            viewModel.requestSolution()
-            runCurrent()
-            assertEquals(2, viewModel.uiState.value.solutionMoves.size)
+            try {
+                viewModel.requestSolution()
+                runCurrent()
+                assertEquals(2, viewModel.uiState.value.solutionMoves.size)
 
-            viewModel.moveTile(firstMove)
-            runCurrent()
-            assertEquals(listOf(secondMove), viewModel.uiState.value.solutionMoves)
+                viewModel.moveTile(firstMove)
+                runCurrent()
+                assertEquals(listOf(secondMove), viewModel.uiState.value.solutionMoves)
 
-            viewModel.moveTile(
-                Move(gameId = 1L, fromPosition = 3, toPosition = 0),
-            )
-            runCurrent()
-            assertEquals(emptyList<Move>(), viewModel.uiState.value.solutionMoves)
-            viewModel.viewModelScope.cancel()
+                viewModel.moveTile(
+                    Move(gameId = 1L, fromPosition = 3, toPosition = 0),
+                )
+                runCurrent()
+                assertEquals(emptyList<Move>(), viewModel.uiState.value.solutionMoves)
+            } finally {
+                viewModel.viewModelScope.cancel()
+            }
         }
 
     @Test
@@ -134,19 +149,65 @@ class PuzzleViewModelTest {
         runTest(testDispatcher) {
             val manager = FakePuzzleManager()
             manager.solution = listOf(Move(gameId = 1L, fromPosition = 1, toPosition = 0))
-            val viewModel = PuzzleViewModel(manager, TestClock(0L))
+            val viewModel = createViewModel(manager, TestClock(0L))
 
-            viewModel.requestSolution()
-            runCurrent()
-            assertEquals(1, viewModel.uiState.value.solutionMoves.size)
+            try {
+                viewModel.requestSolution()
+                runCurrent()
+                assertEquals(1, viewModel.uiState.value.solutionMoves.size)
 
-            viewModel.clearAll()
-            runCurrent()
+                viewModel.clearAll()
+                runCurrent()
 
-            assertEquals(emptyList<Move>(), viewModel.uiState.value.solutionMoves)
-            assertEquals(emptyList<Tile>(), viewModel.uiState.value.tiles)
-            viewModel.viewModelScope.cancel()
+                assertEquals(emptyList<Move>(), viewModel.uiState.value.solutionMoves)
+                assertEquals(emptyList<Tile>(), viewModel.uiState.value.tiles)
+            } finally {
+                viewModel.viewModelScope.cancel()
+            }
         }
+
+    @Test
+    fun `select image stores the selected uri in UI state`() =
+        runTest(testDispatcher) {
+            val viewModel = createViewModel(FakePuzzleManager(), TestClock(0L))
+            try {
+                val imageUri = Uri.parse("content://images/1")
+                runCurrent()
+
+                viewModel.selectImage(imageUri)
+
+                assertEquals(imageUri, viewModel.uiState.value.selectedImageUri)
+            } finally {
+                viewModel.viewModelScope.cancel()
+            }
+        }
+
+    @Test
+    fun `clear selected image removes the uri from UI state`() =
+        runTest(testDispatcher) {
+            val viewModel = createViewModel(FakePuzzleManager(), TestClock(0L))
+            try {
+                runCurrent()
+                viewModel.selectImage(Uri.parse("content://images/1"))
+
+                viewModel.clearSelectedImage()
+
+                assertEquals(null, viewModel.uiState.value.selectedImageUri)
+            } finally {
+                viewModel.viewModelScope.cancel()
+            }
+        }
+
+    private fun createViewModel(
+        manager: PuzzleManager,
+        clock: Clock,
+    ): PuzzleViewModel =
+        PuzzleViewModel(
+            puzzleManager = manager,
+            clock = clock,
+            bitmapSlicer = BitmapSlicerImpl(),
+            bitmapCache = BitmapCacheImpl(),
+        )
 
     private class TestClock(
         var currentTimeMillis: Long,
