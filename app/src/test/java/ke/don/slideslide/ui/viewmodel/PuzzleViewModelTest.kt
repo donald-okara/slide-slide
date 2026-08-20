@@ -25,6 +25,7 @@ import ke.don.slideslide.domain.model.Difficulty
 import ke.don.slideslide.domain.model.Game
 import ke.don.slideslide.domain.model.Move
 import ke.don.slideslide.domain.model.Tile
+import ke.don.slideslide.ui.state.PuzzleIntent
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.Flow
@@ -126,16 +127,16 @@ class PuzzleViewModelTest {
             val viewModel = createViewModel(manager, TestClock(0L))
 
             try {
-                viewModel.requestSolution()
+                viewModel.onIntent(PuzzleIntent.RequestHint)
                 runCurrent()
                 assertEquals(2, viewModel.uiState.value.solutionMoves.size)
 
-                viewModel.moveTile(firstMove)
+                viewModel.onIntent(PuzzleIntent.MoveTile(firstMove))
                 runCurrent()
                 assertEquals(listOf(secondMove), viewModel.uiState.value.solutionMoves)
 
-                viewModel.moveTile(
-                    Move(gameId = 1L, fromPosition = 3, toPosition = 0),
+                viewModel.onIntent(
+                    PuzzleIntent.MoveTile(Move(gameId = 1L, fromPosition = 3, toPosition = 0)),
                 )
                 runCurrent()
                 assertEquals(emptyList<Move>(), viewModel.uiState.value.solutionMoves)
@@ -152,7 +153,7 @@ class PuzzleViewModelTest {
             val viewModel = createViewModel(manager, TestClock(0L))
 
             try {
-                viewModel.requestSolution()
+                viewModel.onIntent(PuzzleIntent.RequestHint)
                 runCurrent()
                 assertEquals(1, viewModel.uiState.value.solutionMoves.size)
 
@@ -174,7 +175,7 @@ class PuzzleViewModelTest {
                 val imageUri = Uri.parse("content://images/1")
                 runCurrent()
 
-                viewModel.selectImage(imageUri)
+                viewModel.onIntent(PuzzleIntent.SelectImage(imageUri))
 
                 assertEquals(imageUri, viewModel.uiState.value.selectedImageUri)
             } finally {
@@ -188,9 +189,9 @@ class PuzzleViewModelTest {
             val viewModel = createViewModel(FakePuzzleManager(), TestClock(0L))
             try {
                 runCurrent()
-                viewModel.selectImage(Uri.parse("content://images/1"))
+                viewModel.onIntent(PuzzleIntent.SelectImage(Uri.parse("content://images/1")))
 
-                viewModel.clearSelectedImage()
+                viewModel.onIntent(PuzzleIntent.ClearImage)
 
                 assertEquals(null, viewModel.uiState.value.selectedImageUri)
             } finally {

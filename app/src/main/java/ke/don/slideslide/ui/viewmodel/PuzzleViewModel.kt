@@ -27,8 +27,10 @@ import ke.don.slideslide.domain.image.BitmapSlicer
 import ke.don.slideslide.domain.manager.PuzzleManager
 import ke.don.slideslide.domain.model.Difficulty
 import ke.don.slideslide.domain.model.Move
+import ke.don.slideslide.ui.state.PuzzleIntent
 import ke.don.slideslide.ui.state.PuzzleUiState
 import ke.don.slideslide.ui.utils.calculateElapsedSeconds
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -51,6 +53,7 @@ class PuzzleViewModel
         private val bitmapCache: BitmapCache,
     ) : ViewModel() {
         private val _uiState = MutableStateFlow(PuzzleUiState())
+        private var autoSolveJob: Job? = null
 
         val uiState: StateFlow<PuzzleUiState> = _uiState.asStateFlow()
 
@@ -60,14 +63,42 @@ class PuzzleViewModel
         }
 
         @RequiresApi(Build.VERSION_CODES.O)
+        fun onIntent(intent: PuzzleIntent) {
+            when (intent) {
+                is PuzzleIntent.ChangeDifficulty -> createGame(intent.difficulty)
+                is PuzzleIntent.MoveTile -> moveTile(intent.move)
+                PuzzleIntent.Shuffle -> shuffle()
+                PuzzleIntent.Undo -> undo()
+                PuzzleIntent.Reset -> reset()
+                PuzzleIntent.RequestHint -> requestSolution()
+                PuzzleIntent.ToggleAutoSolve -> toggleAutoSolve()
+                is PuzzleIntent.SelectImage -> selectImage(intent.uri)
+                is PuzzleIntent.ProcessImage -> processSelectedImage(intent.bitmap, intent.difficulty)
+                PuzzleIntent.ClearImage -> clearSelectedImage()
+                PuzzleIntent.ShowImagePreview -> updateState { copy(showImagePreview = true) }
+                PuzzleIntent.DismissImagePreview -> updateState { copy(showImagePreview = false) }
+                PuzzleIntent.DismissVictoryDialog -> updateState { copy(showVictoryDialog = false) }
+                PuzzleIntent.PlayAgain -> {
+                    updateState { copy(showVictoryDialog = false) }
+                    shuffle()
+                }
+            }
+        }
+
+        @RequiresApi(Build.VERSION_CODES.O)
         private fun observeGame() {
             viewModelScope.launch {
+                var isFirstEmission = true
                 puzzleManager.observeGame().collect { game ->
                     updateState {
+                        val isNewlyWon = !isFirstEmission && game?.isWon == true && !isWon
+                        isFirstEmission = false
                         copy(
-                            tiles = game?.tiles.orEmpty(),
+                            gameId = game?.id ?: 0L,
+                            tiles = game?.tiles?.sortedBy { it.id }.orEmpty(),
                             moveCount = game?.moveCount ?: 0,
                             isWon = game?.isWon ?: false,
+                            showVictoryDialog = if (isNewlyWon) true else showVictoryDialog,
                             difficulty = game?.difficulty ?: difficulty,
                             gameStartTime = game?.startTime,
                             gameEndTime = game?.endTime,
@@ -102,30 +133,38 @@ class PuzzleViewModel
             }
         }
 
-        fun createGame(difficulty: Difficulty) {
+        private fun createGame(difficulty: Difficulty) {
+            updateState {
+                copy(
+                    isWon = false,
+                    showVictoryDialog = false,
+                    isHintActive = false,
+                    solutionMoves = emptyList(),
+                )
+            }
             executeAction {
                 puzzleManager.createGame(difficulty)
                 updateState {
                     copy(
                         difficulty = difficulty,
-                        solutionMoves = emptyList(),
                         imageTiles = emptyList(),
                     )
                 }
             }
         }
 
-        fun selectImage(uri: Uri) {
+        private fun selectImage(uri: Uri) {
             updateState {
                 copy(
                     selectedImageUri = uri,
+                    originalImage = null,
                     imageTiles = emptyList(),
                     error = null,
                 )
             }
         }
 
-        fun processSelectedImage(
+        private fun processSelectedImage(
             bitmap: Bitmap,
             difficulty: Difficulty,
         ) {
@@ -139,6 +178,7 @@ class PuzzleViewModel
 
                 updateState {
                     copy(
+                        originalImage = bitmap,
                         imageTiles = tiles,
                         difficulty = difficulty,
                     )
@@ -146,18 +186,52 @@ class PuzzleViewModel
             }
         }
 
-        fun clearSelectedImage() {
+        private fun clearSelectedImage() {
             updateState {
                 copy(
                     selectedImageUri = null,
+                    originalImage = null,
                     imageTiles = emptyList(),
                 )
             }
         }
 
-        fun moveTile(move: Move) {
+        private fun toggleAutoSolve() {
+            if (uiState.value.isAutoSolving) {
+                stopAutoSolve()
+            } else {
+                startAutoSolve()
+            }
+        }
+
+        private fun startAutoSolve() {
+            autoSolveJob?.cancel()
+            autoSolveJob =
+                viewModelScope.launch {
+                    updateState { copy(isAutoSolving = true, solutionMoves = emptyList()) }
+                    val solution = puzzleManager.autoSolve()
+                    if (solution != null) {
+                        for (move in solution) {
+                            if (!isActive) break
+                            moveTile(move, isAutoMove = true)
+                            delay(AUTO_SOLVE_INTERVAL_MILLIS)
+                        }
+                    }
+                    updateState { copy(isAutoSolving = false) }
+                }
+        }
+
+        private fun stopAutoSolve() {
+            autoSolveJob?.cancel()
+            updateState { copy(isAutoSolving = false) }
+        }
+
+        private fun moveTile(move: Move, isAutoMove: Boolean = false) {
             executeAction {
                 if (puzzleManager.moveTile(move)) {
+                    if (!isAutoMove) {
+                        stopAutoSolve()
+                    }
                     updateState {
                         val recommendedMove = solutionMoves.firstOrNull()
                         val followsRecommendation =
@@ -166,6 +240,7 @@ class PuzzleViewModel
                                 recommendedMove.toPosition == move.toPosition
 
                         copy(
+                            isHintActive = false,
                             solutionMoves =
                                 when {
                                     recommendedMove == null -> solutionMoves
@@ -178,31 +253,45 @@ class PuzzleViewModel
             }
         }
 
-        fun shuffle() {
+        private fun shuffle() {
+            updateState {
+                copy(
+                    isWon = false,
+                    showVictoryDialog = false,
+                    isHintActive = false,
+                    solutionMoves = emptyList(),
+                )
+            }
             executeAction {
                 puzzleManager.shuffle()
-                updateState {
-                    copy(solutionMoves = emptyList())
-                }
             }
         }
 
-        fun undo() {
+        private fun undo() {
             executeAction {
                 if (puzzleManager.undo()) {
                     updateState {
-                        copy(solutionMoves = emptyList())
+                        copy(
+                            isHintActive = false,
+                            solutionMoves = emptyList(),
+                            showVictoryDialog = false,
+                        )
                     }
                 }
             }
         }
 
-        fun reset() {
+        private fun reset() {
+            updateState {
+                copy(
+                    isWon = false,
+                    showVictoryDialog = false,
+                    isHintActive = false,
+                    solutionMoves = emptyList(),
+                )
+            }
             executeAction {
                 puzzleManager.reset()
-                updateState {
-                    copy(solutionMoves = emptyList())
-                }
             }
         }
 
@@ -214,6 +303,7 @@ class PuzzleViewModel
                         tiles = emptyList(),
                         moveCount = 0,
                         isWon = false,
+                        showVictoryDialog = false,
                         timerSeconds = 0,
                         gameStartTime = null,
                         gameEndTime = null,
@@ -225,11 +315,12 @@ class PuzzleViewModel
             }
         }
 
-        fun requestSolution() {
+        private fun requestSolution() {
             executeAction {
                 val solution = puzzleManager.autoSolve().orEmpty()
                 updateState {
                     copy(
+                        isHintActive = true,
                         solutionMoves = solution,
                     )
                 }
@@ -270,5 +361,6 @@ class PuzzleViewModel
 
         private companion object {
             const val TIMER_UPDATE_INTERVAL_MILLIS = 1_000L
+            const val AUTO_SOLVE_INTERVAL_MILLIS = 500L
         }
     }

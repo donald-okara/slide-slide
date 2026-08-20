@@ -31,4 +31,10 @@ fun calculateElapsedSeconds(
     return ((effectiveEndTime - startTime) / MILLIS_PER_SECOND).coerceAtLeast(0L)
 }
 
+fun formatSeconds(seconds: Long): String {
+    val mins = seconds / 60
+    val secs = seconds % 60
+    return "%02d:%02d".format(mins, secs)
+}
+
 private const val MILLIS_PER_SECOND = 1_000L
