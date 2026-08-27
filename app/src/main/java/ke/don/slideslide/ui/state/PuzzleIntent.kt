@@ -35,4 +35,5 @@ sealed interface PuzzleIntent {
     data object ToggleAutoSolve : PuzzleIntent
     data object DismissVictoryDialog : PuzzleIntent
     data object PlayAgain : PuzzleIntent
+    data object ClearAll : PuzzleIntent
 }

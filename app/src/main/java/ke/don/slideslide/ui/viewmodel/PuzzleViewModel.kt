@@ -82,6 +82,7 @@ class PuzzleViewModel
                     updateState { copy(showVictoryDialog = false) }
                     shuffle()
                 }
+                PuzzleIntent.ClearAll -> clearAll()
             }
         }
 
@@ -312,6 +313,13 @@ class PuzzleViewModel
                         imageTiles = emptyList(),
                     )
                 }
+            }
+        }
+
+        override fun onCleared() {
+            super.onCleared()
+            viewModelScope.launch {
+                puzzleManager.clearAll()
             }
         }
 

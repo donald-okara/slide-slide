@@ -28,6 +28,7 @@ import ke.don.slideslide.domain.usecase.SolveUseCaseImpl
 import ke.don.slideslide.domain.usecase.ValidateMoveUseCaseImpl
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Assert.assertEquals
@@ -67,6 +68,7 @@ class PuzzleManagerImplTest {
                 isGameOverUseCase = IsGameOverUseCaseImpl(),
                 shuffleUseCase = ShuffleUseCaseImpl(),
                 solveUseCase = SolveUseCaseImpl(),
+                ioDispatcher = UnconfinedTestDispatcher(),
             )
     }
 
