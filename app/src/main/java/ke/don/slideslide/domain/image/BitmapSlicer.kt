@@ -18,7 +18,6 @@ package ke.don.slideslide.domain.image
 import android.graphics.Bitmap
 import ke.don.slideslide.domain.model.Difficulty
 import javax.inject.Inject
-import kotlin.math.min
 
 interface BitmapSlicer {
     /**
@@ -44,13 +43,9 @@ class BitmapSlicerImpl
             require(!bitmap.isRecycled) { "Cannot slice a recycled bitmap" }
 
             val gridSize = difficulty.size
-            val sourceSize = min(bitmap.width, bitmap.height)
-            val tileSize = sourceSize / gridSize
+            // Since we manually crop to square, width and height should be equal
+            val tileSize = bitmap.width / gridSize
             require(tileSize > 0) { "Bitmap is too small for the selected difficulty" }
-
-            val croppedSize = tileSize * gridSize
-            val cropLeft = (bitmap.width - croppedSize) / 2
-            val cropTop = (bitmap.height - croppedSize) / 2
 
             return buildList(difficulty.totalTiles) {
                 repeat(difficulty.totalTiles) { index ->
@@ -59,8 +54,8 @@ class BitmapSlicerImpl
                     add(
                         Bitmap.createBitmap(
                             bitmap,
-                            cropLeft + column * tileSize,
-                            cropTop + row * tileSize,
+                            column * tileSize,
+                            row * tileSize,
                             tileSize,
                             tileSize,
                         ),

@@ -30,6 +30,8 @@ sealed interface PuzzleIntent {
     data class SelectImage(val uri: Uri) : PuzzleIntent
     data class ProcessImage(val bitmap: Bitmap, val difficulty: Difficulty) : PuzzleIntent
     data object ClearImage : PuzzleIntent
+    data class ConfirmCrop(val bitmap: Bitmap) : PuzzleIntent
+    data object CancelCrop : PuzzleIntent
     data object ShowImagePreview : PuzzleIntent
     data object DismissImagePreview : PuzzleIntent
     data object ToggleAutoSolve : PuzzleIntent

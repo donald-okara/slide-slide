@@ -15,6 +15,7 @@
  */
 package ke.don.slideslide.ui.viewmodel
 
+import android.graphics.Bitmap
 import android.net.Uri
 import androidx.arch.core.executor.testing.InstantTaskExecutorRule
 import androidx.lifecycle.viewModelScope
@@ -168,7 +169,7 @@ class PuzzleViewModelTest {
         }
 
     @Test
-    fun `select image stores the selected uri in UI state`() =
+    fun `select image sets isCropping to true`() =
         runTest(testDispatcher) {
             val viewModel = createViewModel(FakePuzzleManager(), TestClock(0L))
             try {
@@ -178,6 +179,46 @@ class PuzzleViewModelTest {
                 viewModel.onIntent(PuzzleIntent.SelectImage(imageUri))
 
                 assertEquals(imageUri, viewModel.uiState.value.selectedImageUri)
+                assertEquals(true, viewModel.uiState.value.isCropping)
+            } finally {
+                viewModel.viewModelScope.cancel()
+            }
+        }
+
+    @Test
+    fun `confirm crop updates originalImage and sets isCropping to false`() =
+        runTest(testDispatcher) {
+            val viewModel = createViewModel(FakePuzzleManager(), TestClock(0L))
+            try {
+                val bitmap = Bitmap.createBitmap(100, 100, Bitmap.Config.ARGB_8888)
+                runCurrent()
+
+                viewModel.onIntent(PuzzleIntent.ConfirmCrop(bitmap))
+                runCurrent()
+
+                assertEquals(bitmap, viewModel.uiState.value.originalImage)
+                assertEquals(false, viewModel.uiState.value.isCropping)
+                assertEquals(9, viewModel.uiState.value.imageTiles.size)
+            } finally {
+                viewModel.viewModelScope.cancel()
+            }
+        }
+
+    @Test
+    fun `cancel crop resets cropping state`() =
+        runTest(testDispatcher) {
+            val viewModel = createViewModel(FakePuzzleManager(), TestClock(0L))
+            try {
+                runCurrent()
+                viewModel.onIntent(PuzzleIntent.SelectImage(Uri.parse("content://images/1")))
+                assertEquals(true, viewModel.uiState.value.isCropping)
+
+                viewModel.onIntent(PuzzleIntent.CancelCrop)
+                runCurrent()
+
+                assertEquals(null, viewModel.uiState.value.selectedImageUri)
+                assertEquals(false, viewModel.uiState.value.isCropping)
+                assertEquals(null, viewModel.uiState.value.croppingImage)
             } finally {
                 viewModel.viewModelScope.cancel()
             }

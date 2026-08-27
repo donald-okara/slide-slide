@@ -74,6 +74,8 @@ class PuzzleViewModel
                 PuzzleIntent.ToggleAutoSolve -> toggleAutoSolve()
                 is PuzzleIntent.SelectImage -> selectImage(intent.uri)
                 is PuzzleIntent.ProcessImage -> processSelectedImage(intent.bitmap, intent.difficulty)
+                is PuzzleIntent.ConfirmCrop -> confirmCrop(intent.bitmap)
+                PuzzleIntent.CancelCrop -> cancelCrop()
                 PuzzleIntent.ClearImage -> clearSelectedImage()
                 PuzzleIntent.ShowImagePreview -> updateState { copy(showImagePreview = true) }
                 PuzzleIntent.DismissImagePreview -> updateState { copy(showImagePreview = false) }
@@ -146,9 +148,12 @@ class PuzzleViewModel
             executeAction {
                 puzzleManager.createGame(difficulty)
                 updateState {
+                    val newImageTiles = originalImage?.let {
+                        bitmapSlicer.slice(it, difficulty)
+                    } ?: emptyList()
                     copy(
                         difficulty = difficulty,
-                        imageTiles = emptyList(),
+                        imageTiles = newImageTiles,
                     )
                 }
             }
@@ -158,7 +163,9 @@ class PuzzleViewModel
             updateState {
                 copy(
                     selectedImageUri = uri,
+                    isCropping = true,
                     originalImage = null,
+                    croppingImage = null,
                     imageTiles = emptyList(),
                     error = null,
                 )
@@ -169,21 +176,37 @@ class PuzzleViewModel
             bitmap: Bitmap,
             difficulty: Difficulty,
         ) {
+            updateState {
+                copy(
+                    croppingImage = bitmap,
+                    difficulty = difficulty,
+                )
+            }
+        }
+
+        private fun confirmCrop(bitmap: Bitmap) {
             executeAction {
-                val imageUri = uiState.value.selectedImageUri ?: error("No image selected")
-                val tiles =
-                    bitmapCache.get(imageUri, difficulty)
-                        ?: bitmapSlicer.slice(bitmap, difficulty).also { slicedTiles ->
-                            bitmapCache.put(imageUri, difficulty, slicedTiles)
-                        }
+                val difficulty = uiState.value.difficulty
+                val tiles = bitmapSlicer.slice(bitmap, difficulty)
 
                 updateState {
                     copy(
                         originalImage = bitmap,
                         imageTiles = tiles,
-                        difficulty = difficulty,
+                        isCropping = false,
+                        croppingImage = null,
                     )
                 }
+            }
+        }
+
+        private fun cancelCrop() {
+            updateState {
+                copy(
+                    isCropping = false,
+                    selectedImageUri = null,
+                    croppingImage = null,
+                )
             }
         }
 

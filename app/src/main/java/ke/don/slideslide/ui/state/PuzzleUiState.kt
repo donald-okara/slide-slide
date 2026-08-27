@@ -41,6 +41,8 @@ data class PuzzleUiState(
     val showVictoryDialog: Boolean = false,
     val showImagePreview: Boolean = false,
     val isAutoSolving: Boolean = false,
+    val isCropping: Boolean = false,
+    val croppingImage: Bitmap? = null,
     val isLoading: Boolean = false,
     val error: String? = null,
 )

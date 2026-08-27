@@ -106,6 +106,10 @@ fun SetupScreen(
         onPickImage = { launcher.launch("image/*") },
         onStartGame = onStartGame,
     )
+
+    if (uiState.isCropping) {
+        ImageCropScreen(viewModel = viewModel)
+    }
 }
 
 @Composable
