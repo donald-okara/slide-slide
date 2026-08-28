@@ -21,6 +21,7 @@ import androidx.arch.core.executor.testing.InstantTaskExecutorRule
 import androidx.lifecycle.viewModelScope
 import ke.don.slideslide.domain.image.BitmapCacheImpl
 import ke.don.slideslide.domain.image.BitmapSlicerImpl
+import ke.don.slideslide.domain.manager.FeedbackManager
 import ke.don.slideslide.domain.manager.PuzzleManager
 import ke.don.slideslide.domain.model.Difficulty
 import ke.don.slideslide.domain.model.Game
@@ -147,6 +148,23 @@ class PuzzleViewModelTest {
         }
 
     @Test
+    fun `shuffle creates a game if the grid is empty`() =
+        runTest(testDispatcher) {
+            val viewModel = createViewModel(FakePuzzleManager(), TestClock(0L))
+            try {
+                runCurrent()
+                assertEquals(0, viewModel.uiState.value.tiles.size)
+
+                viewModel.onIntent(PuzzleIntent.Shuffle)
+                runCurrent()
+
+                assertEquals(9, viewModel.uiState.value.tiles.size)
+            } finally {
+                viewModel.viewModelScope.cancel()
+            }
+        }
+
+    @Test
     fun `clear all removes recommendations from UI state`() =
         runTest(testDispatcher) {
             val manager = FakePuzzleManager()
@@ -186,7 +204,7 @@ class PuzzleViewModelTest {
         }
 
     @Test
-    fun `confirm crop updates originalImage and sets isCropping to false`() =
+    fun `confirm crop updates originalImage, populates grid, and sets isCropping to false`() =
         runTest(testDispatcher) {
             val viewModel = createViewModel(FakePuzzleManager(), TestClock(0L))
             try {
@@ -199,6 +217,7 @@ class PuzzleViewModelTest {
                 assertEquals(bitmap, viewModel.uiState.value.originalImage)
                 assertEquals(false, viewModel.uiState.value.isCropping)
                 assertEquals(9, viewModel.uiState.value.imageTiles.size)
+                assertEquals(9, viewModel.uiState.value.tiles.size)
             } finally {
                 viewModel.viewModelScope.cancel()
             }
@@ -240,12 +259,94 @@ class PuzzleViewModelTest {
             }
         }
 
+    @Test
+    fun `move feedback is triggered on tile move`() =
+        runTest(testDispatcher) {
+            val manager = FakePuzzleManager()
+            val feedback = FakeFeedbackManager()
+            val viewModel = createViewModel(manager, TestClock(0L), feedback)
+            val move = Move(gameId = 1L, fromPosition = 1, toPosition = 0)
+
+            try {
+                viewModel.onIntent(PuzzleIntent.MoveTile(move))
+                runCurrent()
+
+                assertEquals(1, feedback.moveFeedbackCount)
+                // Also triggered click feedback from onIntent
+                assertEquals(1, feedback.clickFeedbackCount)
+            } finally {
+                viewModel.viewModelScope.cancel()
+            }
+        }
+
+    @Test
+    fun `toggle sound updates UI state and feedback manager`() =
+        runTest(testDispatcher) {
+            val feedback = FakeFeedbackManager()
+            val viewModel = createViewModel(FakePuzzleManager(), TestClock(0L), feedback)
+
+            try {
+                assertEquals(true, viewModel.uiState.value.isSoundEnabled)
+                
+                viewModel.onIntent(PuzzleIntent.ToggleSound)
+                runCurrent()
+                
+                assertEquals(false, viewModel.uiState.value.isSoundEnabled)
+                assertEquals(false, feedback.soundEnabled)
+            } finally {
+                viewModel.viewModelScope.cancel()
+            }
+        }
+
+    @Test
+    fun `toggle vibration updates UI state and feedback manager`() =
+        runTest(testDispatcher) {
+            val feedback = FakeFeedbackManager()
+            val viewModel = createViewModel(FakePuzzleManager(), TestClock(0L), feedback)
+
+            try {
+                assertEquals(true, viewModel.uiState.value.isVibrationEnabled)
+                
+                viewModel.onIntent(PuzzleIntent.ToggleVibration)
+                runCurrent()
+                
+                assertEquals(false, viewModel.uiState.value.isVibrationEnabled)
+                assertEquals(false, feedback.vibrationEnabled)
+            } finally {
+                viewModel.viewModelScope.cancel()
+            }
+        }
+
+    @Test
+    fun `victory feedback is triggered on win`() =
+        runTest(testDispatcher) {
+            val manager = FakePuzzleManager()
+            val feedback = FakeFeedbackManager()
+            val viewModel = createViewModel(manager, TestClock(0L), feedback)
+
+            try {
+                // First emission: not won
+                manager.emitGame(startTime = 1000L, isWon = false)
+                runCurrent()
+
+                // Second emission: won
+                manager.emitGame(startTime = 1000L, isWon = true)
+                runCurrent()
+
+                assertEquals(1, feedback.victoryFeedbackCount)
+            } finally {
+                viewModel.viewModelScope.cancel()
+            }
+        }
+
     private fun createViewModel(
         manager: PuzzleManager,
         clock: Clock,
+        feedback: FeedbackManager = FakeFeedbackManager(),
     ): PuzzleViewModel =
         PuzzleViewModel(
             puzzleManager = manager,
+            feedbackManager = feedback,
             clock = clock,
             bitmapSlicer = BitmapSlicerImpl(),
             bitmapCache = BitmapCacheImpl(),
@@ -283,7 +384,25 @@ class PuzzleViewModelTest {
                 )
         }
 
-        override suspend fun createGame(difficulty: Difficulty): Game = error("Not used in this test")
+        override suspend fun createGame(difficulty: Difficulty): Game {
+            val game =
+                Game(
+                    id = 1L,
+                    difficulty = difficulty,
+                    tiles =
+                        (0 until difficulty.totalTiles).map {
+                            Tile(
+                                id = it,
+                                value = it,
+                                currentPosition = it,
+                                correctPosition = it,
+                            )
+                        },
+                    startTime = 1000L,
+                )
+            gameState.value = game
+            return game
+        }
 
         override suspend fun moveTile(move: Move): Boolean = true
 
@@ -300,5 +419,45 @@ class PuzzleViewModelTest {
         override suspend fun clearAll() = Unit
 
         private fun emptyTiles(): List<Tile> = emptyList()
+    }
+
+    private class FakeFeedbackManager : FeedbackManager {
+        var moveFeedbackCount = 0
+        var hintFeedbackCount = 0
+        var victoryFeedbackCount = 0
+        var clickFeedbackCount = 0
+        var vibrateCount = 0
+        var soundEnabled = true
+        var vibrationEnabled = true
+        var isReleased = false
+
+        override fun setEnabled(soundEnabled: Boolean, vibrationEnabled: Boolean) {
+            this.soundEnabled = soundEnabled
+            this.vibrationEnabled = vibrationEnabled
+        }
+
+        override fun playMoveFeedback() {
+            moveFeedbackCount++
+        }
+
+        override fun playHintFeedback() {
+            hintFeedbackCount++
+        }
+
+        override fun playVictoryFeedback() {
+            victoryFeedbackCount++
+        }
+
+        override fun playClickFeedback() {
+            clickFeedbackCount++
+        }
+
+        override fun playVibrate() {
+            vibrateCount++
+        }
+
+        override fun release() {
+            isReleased = true
+        }
     }
 }

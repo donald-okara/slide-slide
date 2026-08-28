@@ -17,11 +17,22 @@ package ke.don.slideslide.ui.screen
 
 import androidx.annotation.RequiresApi
 import android.os.Build
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.VolumeOff
+import androidx.compose.material.icons.automirrored.filled.VolumeUp
+import androidx.compose.material.icons.filled.Vibration
+import androidx.compose.material.icons.filled.VolumeOff
+import androidx.compose.material.icons.filled.VolumeUp
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
@@ -77,6 +88,26 @@ fun PuzzleContent(
                     .padding(24.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.End
+            ) {
+                IconButton(onClick = { onIntent(PuzzleIntent.ToggleSound) }) {
+                    Icon(
+                        imageVector = if (uiState.isSoundEnabled) Icons.AutoMirrored.Filled.VolumeUp else Icons.AutoMirrored.Filled.VolumeOff,
+                        contentDescription = "Toggle Sound",
+                        tint = if (uiState.isSoundEnabled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.secondary
+                    )
+                }
+                IconButton(onClick = { onIntent(PuzzleIntent.ToggleVibration) }) {
+                    Icon(
+                        imageVector = Icons.Default.Vibration,
+                        contentDescription = "Toggle Vibration",
+                        tint = if (uiState.isVibrationEnabled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.secondary
+                    )
+                }
+            }
+
             GameStats(
                 moveCount = uiState.moveCount,
                 timerSeconds = uiState.timerSeconds,

@@ -35,6 +35,8 @@ sealed interface PuzzleIntent {
     data object ShowImagePreview : PuzzleIntent
     data object DismissImagePreview : PuzzleIntent
     data object ToggleAutoSolve : PuzzleIntent
+    data object ToggleSound : PuzzleIntent
+    data object ToggleVibration : PuzzleIntent
     data object DismissVictoryDialog : PuzzleIntent
     data object PlayAgain : PuzzleIntent
     data object ClearAll : PuzzleIntent

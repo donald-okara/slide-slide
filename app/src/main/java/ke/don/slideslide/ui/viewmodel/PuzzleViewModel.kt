@@ -24,6 +24,7 @@ import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import ke.don.slideslide.domain.image.BitmapCache
 import ke.don.slideslide.domain.image.BitmapSlicer
+import ke.don.slideslide.domain.manager.FeedbackManager
 import ke.don.slideslide.domain.manager.PuzzleManager
 import ke.don.slideslide.domain.model.Difficulty
 import ke.don.slideslide.domain.model.Move
@@ -48,6 +49,7 @@ class PuzzleViewModel
     @Inject
     constructor(
         private val puzzleManager: PuzzleManager,
+        private val feedbackManager: FeedbackManager,
         private val clock: Clock,
         private val bitmapSlicer: BitmapSlicer,
         private val bitmapCache: BitmapCache,
@@ -64,6 +66,7 @@ class PuzzleViewModel
 
         @RequiresApi(Build.VERSION_CODES.O)
         fun onIntent(intent: PuzzleIntent) {
+            playClickFeedback()
             when (intent) {
                 is PuzzleIntent.ChangeDifficulty -> createGame(intent.difficulty)
                 is PuzzleIntent.MoveTile -> moveTile(intent.move)
@@ -72,6 +75,8 @@ class PuzzleViewModel
                 PuzzleIntent.Reset -> reset()
                 PuzzleIntent.RequestHint -> requestSolution()
                 PuzzleIntent.ToggleAutoSolve -> toggleAutoSolve()
+                PuzzleIntent.ToggleSound -> toggleSound()
+                PuzzleIntent.ToggleVibration -> toggleVibration()
                 is PuzzleIntent.SelectImage -> selectImage(intent.uri)
                 is PuzzleIntent.ProcessImage -> processSelectedImage(intent.bitmap, intent.difficulty)
                 is PuzzleIntent.ConfirmCrop -> confirmCrop(intent.bitmap)
@@ -96,6 +101,9 @@ class PuzzleViewModel
                     updateState {
                         val isNewlyWon = !isFirstEmission && game?.isWon == true && !isWon
                         isFirstEmission = false
+                        if (isNewlyWon) {
+                            feedbackManager.playVictoryFeedback()
+                        }
                         copy(
                             gameId = game?.id ?: 0L,
                             tiles = game?.tiles?.sortedBy { it.id }.orEmpty(),
@@ -188,6 +196,9 @@ class PuzzleViewModel
             executeAction {
                 val difficulty = uiState.value.difficulty
                 val tiles = bitmapSlicer.slice(bitmap, difficulty)
+                
+                // Ensure a game is created so tiles are available in the grid
+                puzzleManager.createGame(difficulty)
 
                 updateState {
                     copy(
@@ -228,6 +239,22 @@ class PuzzleViewModel
             }
         }
 
+        private fun toggleSound() {
+            updateState {
+                val newValue = !isSoundEnabled
+                feedbackManager.setEnabled(newValue, isVibrationEnabled)
+                copy(isSoundEnabled = newValue)
+            }
+        }
+
+        private fun toggleVibration() {
+            updateState {
+                val newValue = !isVibrationEnabled
+                feedbackManager.setEnabled(isSoundEnabled, newValue)
+                copy(isVibrationEnabled = newValue)
+            }
+        }
+
         private fun startAutoSolve() {
             autoSolveJob?.cancel()
             autoSolveJob =
@@ -238,7 +265,7 @@ class PuzzleViewModel
                         for (move in solution) {
                             if (!isActive) break
                             moveTile(move, isAutoMove = true)
-                            delay(AUTO_SOLVE_INTERVAL_MILLIS)
+                            delay(AUTO_SOLVE_INTERVAL_MILLIS.milliseconds)
                         }
                     }
                     updateState { copy(isAutoSolving = false) }
@@ -256,6 +283,7 @@ class PuzzleViewModel
                     if (!isAutoMove) {
                         stopAutoSolve()
                     }
+                    feedbackManager.playMoveFeedback()
                     updateState {
                         val recommendedMove = solutionMoves.firstOrNull()
                         val followsRecommendation =
@@ -287,7 +315,11 @@ class PuzzleViewModel
                 )
             }
             executeAction {
-                puzzleManager.shuffle()
+                if (uiState.value.tiles.isEmpty()) {
+                    puzzleManager.createGame(uiState.value.difficulty)
+                } else {
+                    puzzleManager.shuffle()
+                }
             }
         }
 
@@ -341,6 +373,7 @@ class PuzzleViewModel
 
         override fun onCleared() {
             super.onCleared()
+            feedbackManager.release()
             viewModelScope.launch {
                 puzzleManager.clearAll()
             }
@@ -349,6 +382,9 @@ class PuzzleViewModel
         private fun requestSolution() {
             executeAction {
                 val solution = puzzleManager.autoSolve().orEmpty()
+                if (solution.isNotEmpty()) {
+                    feedbackManager.playHintFeedback()
+                }
                 updateState {
                     copy(
                         isHintActive = true,
@@ -388,6 +424,10 @@ class PuzzleViewModel
                     copy(isLoading = false)
                 }
             }
+        }
+
+        fun playClickFeedback() {
+            feedbackManager.playClickFeedback()
         }
 
         private companion object {

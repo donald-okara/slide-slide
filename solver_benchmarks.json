@@ -3,18 +3,18 @@
     "difficulty": "EASY",
     "status": "SUCCESS",
     "avg_moves": 26.67,
-    "avg_time_ms": 1.67
+    "avg_time_ms": 2.67
 },
 {
     "difficulty": "MEDIUM",
     "status": "SUCCESS",
-    "avg_moves": 79.33,
-    "avg_time_ms": 27.67
+    "avg_moves": 62.00,
+    "avg_time_ms": 44.67
 },
 {
     "difficulty": "HARD",
     "status": "SUCCESS",
     "avg_moves": 134.00,
-    "avg_time_ms": 58.67
+    "avg_time_ms": 317.67
 }
 ]

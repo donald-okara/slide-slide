@@ -41,9 +41,13 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AddPhotoAlternate
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.VolumeOff
+import androidx.compose.material.icons.filled.VolumeUp
+import androidx.compose.material.icons.filled.Vibration
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -105,6 +109,7 @@ fun SetupScreen(
         onIntent = { viewModel.onIntent(it) },
         onPickImage = { launcher.launch("image/*") },
         onStartGame = onStartGame,
+        onInteraction = { viewModel.playClickFeedback() }
     )
 
     if (uiState.isCropping) {
@@ -118,6 +123,7 @@ fun SetupContent(
     onIntent: (PuzzleIntent) -> Unit,
     onPickImage: () -> Unit,
     onStartGame: () -> Unit,
+    onInteraction: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Scaffold(
@@ -132,6 +138,26 @@ fun SetupContent(
                     .padding(24.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.End
+            ) {
+                IconButton(onClick = { onIntent(PuzzleIntent.ToggleSound) }) {
+                    Icon(
+                        imageVector = if (uiState.isSoundEnabled) Icons.Default.VolumeUp else Icons.Default.VolumeOff,
+                        contentDescription = "Toggle Sound",
+                        tint = if (uiState.isSoundEnabled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.secondary
+                    )
+                }
+                IconButton(onClick = { onIntent(PuzzleIntent.ToggleVibration) }) {
+                    Icon(
+                        imageVector = Icons.Default.Vibration,
+                        contentDescription = "Toggle Vibration",
+                        tint = if (uiState.isVibrationEnabled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.secondary
+                    )
+                }
+            }
+
             Text(
                 text = "Sliding Puzzle",
                 style = MaterialTheme.typography.headlineLarge.copy(
@@ -158,7 +184,10 @@ fun SetupContent(
                     .aspectRatio(1f)
                     .clip(RoundedCornerShape(32.dp))
                     .background(MaterialTheme.colorScheme.surface)
-                    .clickable(onClick = onPickImage),
+                    .clickable(onClick = {
+                        onInteraction()
+                        onPickImage()
+                    }),
                 contentAlignment = Alignment.Center
             ) {
                 if (uiState.originalImage != null) {
@@ -251,6 +280,7 @@ private fun SetupContentPreview() {
             onIntent = {},
             onPickImage = {},
             onStartGame = {},
+            onInteraction = {},
         )
     }
 }

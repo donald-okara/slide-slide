@@ -43,6 +43,8 @@ data class PuzzleUiState(
     val isAutoSolving: Boolean = false,
     val isCropping: Boolean = false,
     val croppingImage: Bitmap? = null,
+    val isSoundEnabled: Boolean = true,
+    val isVibrationEnabled: Boolean = true,
     val isLoading: Boolean = false,
     val error: String? = null,
 )
