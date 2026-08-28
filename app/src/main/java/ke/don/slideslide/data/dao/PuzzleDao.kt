@@ -103,7 +103,12 @@ interface PuzzleDao {
         movingTileId: Int,
         blankTileId: Int,
     ) {
-        updateGameStatus(gameId, moveCount, isWon, endTime)
+        updateGameStatus(
+            gameId = gameId,
+            moveCount = moveCount,
+            isWon = isWon,
+            endTime = endTime,
+        )
         insertMove(move)
         // The tile being moved goes to the 'to' position (where blank was)
         updateTilePosition(gameId, movingTileId, move.toPosition)
@@ -122,7 +127,12 @@ interface PuzzleDao {
         blankTileId: Int,
         blankOriginalPosition: Int,
     ) {
-        updateGameStatus(gameId, moveCount, false, null)
+        updateGameStatus(
+            gameId = gameId,
+            moveCount = moveCount,
+            isWon = false,
+            endTime = null,
+        )
         deleteMove(moveId)
         updateTilePosition(gameId, movingTileId, originalPosition)
         updateTilePosition(gameId, blankTileId, blankOriginalPosition)

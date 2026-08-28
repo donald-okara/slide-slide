@@ -33,9 +33,7 @@ private val DarkColorScheme =
     )
 
 @Composable
-fun SlideSlideTheme(
-    content: @Composable () -> Unit,
-) {
+fun SlideSlideTheme(content: @Composable () -> Unit) {
     MaterialTheme(
         colorScheme = DarkColorScheme,
         typography = Typography,

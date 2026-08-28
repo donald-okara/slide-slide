@@ -34,6 +34,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import ke.don.slideslide.domain.model.Difficulty
+import ke.don.slideslide.ui.theme.TileBorder
 import ke.don.slideslide.ui.utils.SlidePreview
 import ke.don.slideslide.ui.utils.SlidePreviewContent
 
@@ -51,34 +52,36 @@ fun DifficultySelector(
             val isSelected = difficulty == selectedDifficulty
             val contentColor = if (isSelected) Color.Black else Color.White
             val containerColor = if (isSelected) MaterialTheme.colorScheme.primary else Color.Transparent
-            val borderColor = if (isSelected) Color.Transparent else Color(0xFF49454F)
+            val borderColor = if (isSelected) Color.Transparent else TileBorder
 
             OutlinedButton(
                 onClick = { onDifficultySelected(difficulty) },
                 modifier = Modifier.weight(1f),
                 shape = CircleShape,
-                colors = ButtonDefaults.outlinedButtonColors(
-                    containerColor = containerColor,
-                    contentColor = contentColor
-                ),
-                border = BorderStroke(1.dp, borderColor)
+                colors =
+                    ButtonDefaults.outlinedButtonColors(
+                        containerColor = containerColor,
+                        contentColor = contentColor,
+                    ),
+                border = BorderStroke(1.dp, borderColor),
             ) {
                 if (isSelected) {
                     Icon(
                         imageVector = Icons.Default.Check,
                         contentDescription = null,
-                        modifier = Modifier.size(18.dp).padding(end = 4.dp)
+                        modifier = Modifier.size(18.dp).padding(end = 4.dp),
                     )
                 }
                 Text(
                     text = "${difficulty.size} x ${difficulty.size}",
-                    style = MaterialTheme.typography.labelLarge
+                    style = MaterialTheme.typography.labelLarge,
                 )
             }
         }
     }
 }
 
+@Suppress("UnusedPrivateMember")
 @SlidePreview
 @Composable
 private fun DifficultySelectorPreview() {

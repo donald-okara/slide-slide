@@ -36,6 +36,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
@@ -56,16 +57,32 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
+import androidx.core.graphics.scale
 import ke.don.slideslide.ui.state.PuzzleIntent
 import ke.don.slideslide.ui.viewmodel.PuzzleViewModel
 import kotlin.math.max
-import androidx.core.graphics.scale
+
+@Suppress("MagicNumber")
+private const val OVERLAY_ALPHA = 0.7f
+
+@Suppress("MagicNumber")
+private const val VIEWPORT_SCREEN_RATIO = 0.8f
+
+@Suppress("MagicNumber")
+private const val OUTPUT_IMAGE_SIZE = 1024
+
+@Immutable
+private data class CropParams(
+    val scale: Float,
+    val offset: Offset,
+    val viewportRect: Rect,
+    val screenWidth: Float,
+    val screenHeight: Float,
+)
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun ImageCropScreen(
-    viewModel: PuzzleViewModel,
-) {
+fun ImageCropScreen(viewModel: PuzzleViewModel) {
     val uiState by viewModel.uiState.collectAsState()
     val bitmap = uiState.croppingImage ?: return
 
@@ -74,151 +91,172 @@ fun ImageCropScreen(
     }
 
     Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color.Black),
+        modifier =
+            Modifier
+                .fillMaxSize()
+                .background(Color.Black),
     ) {
         var scale by remember { mutableFloatStateOf(1f) }
         var offset by remember { mutableStateOf(Offset.Zero) }
 
         BoxWithConstraints(
-            modifier = Modifier
-                .fillMaxSize()
-                .pointerInput(Unit) {
-                    detectTransformGestures { _, pan, zoom, _ ->
-                        scale = max(1f, scale * zoom)
-                        offset += pan
-                    }
-                },
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .pointerInput(Unit) {
+                        detectTransformGestures { _, pan, zoom, _ ->
+                            scale = max(1f, scale * zoom)
+                            offset += pan
+                        }
+                    },
         ) {
             val screenWidth = constraints.maxWidth.toFloat()
             val screenHeight = constraints.maxHeight.toFloat()
-            val viewportSize = minOf(screenWidth, screenHeight) * 0.8f
-            
-            val viewportRect = Rect(
-                offset = Offset(
-                    (screenWidth - viewportSize) / 2,
-                    (screenHeight - viewportSize) / 2,
-                ),
-                size = Size(viewportSize, viewportSize),
-            )
+            val viewportSize = minOf(screenWidth, screenHeight) * VIEWPORT_SCREEN_RATIO
 
-            // Image
-            androidx.compose.foundation.Image(
-                bitmap = bitmap.asImageBitmap(),
-                contentDescription = null,
-                modifier = Modifier
-                    .fillMaxSize()
-                    .graphicsLayer(
-                        scaleX = scale,
-                        scaleY = scale,
-                        translationX = offset.x,
-                        translationY = offset.y,
-                    ),
-                contentScale = ContentScale.Fit,
-            )
-
-            // Viewport Overlay
-            Canvas(modifier = Modifier.fillMaxSize()) {
-                val path = Path().apply {
-                    addRect(viewportRect)
-                }
-                clipPath(path, clipOp = ClipOp.Difference) {
-                    drawRect(Color.Black.copy(alpha = 0.7f))
-                }
-                // Viewport border
-                drawRect(
-                    color = Color.White,
-                    topLeft = viewportRect.topLeft,
-                    size = viewportRect.size,
-                    style = androidx.compose.ui.graphics.drawscope.Stroke(width = 2.dp.toPx()),
+            val viewportRect =
+                Rect(
+                    offset =
+                        Offset(
+                            (screenWidth - viewportSize) / 2,
+                            (screenHeight - viewportSize) / 2,
+                        ),
+                    size = Size(viewportSize, viewportSize),
                 )
-            }
 
-            // Controls
-            Row(
-                modifier = Modifier
-                    .align(Alignment.BottomCenter)
-                    .fillMaxWidth()
-                    .padding(32.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                IconButton(
-                    onClick = { viewModel.onIntent(PuzzleIntent.CancelCrop) },
-                ) {
-                    Icon(Icons.Default.Close, contentDescription = "Cancel", tint = Color.White)
-                }
-                
-                Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
-                    Text("Crop Image", color = Color.White, style = MaterialTheme.typography.titleMedium)
-                }
+            CropImageLayer(bitmap, scale, offset)
 
-                IconButton(
-                    onClick = {
-                        val croppedBitmap = cropBitmap(
+            CropOverlay(viewportRect)
+
+            CropControls(
+                onCancel = { viewModel.onIntent(PuzzleIntent.CancelCrop) },
+                onConfirm = {
+                    val croppedBitmap =
+                        cropBitmap(
                             bitmap,
-                            scale,
-                            offset,
-                            viewportRect,
-                            screenWidth,
-                            screenHeight,
+                            CropParams(scale, offset, viewportRect, screenWidth, screenHeight),
                         )
-                        viewModel.onIntent(PuzzleIntent.ConfirmCrop(croppedBitmap))
-                    },
-                ) {
-                    Icon(Icons.Default.Check, contentDescription = "Confirm", tint = MaterialTheme.colorScheme.primary)
-                }
+                    viewModel.onIntent(PuzzleIntent.ConfirmCrop(croppedBitmap))
+                },
+            )
+        }
+    }
+}
+
+@Composable
+private fun CropImageLayer(
+    bitmap: Bitmap,
+    scale: Float,
+    offset: Offset,
+) {
+    androidx.compose.foundation.Image(
+        bitmap = bitmap.asImageBitmap(),
+        contentDescription = null,
+        modifier =
+            Modifier
+                .fillMaxSize()
+                .graphicsLayer(
+                    scaleX = scale,
+                    scaleY = scale,
+                    translationX = offset.x,
+                    translationY = offset.y,
+                ),
+        contentScale = ContentScale.Fit,
+    )
+}
+
+@Composable
+private fun CropOverlay(viewportRect: Rect) {
+    Canvas(modifier = Modifier.fillMaxSize()) {
+        val path =
+            Path().apply {
+                addRect(viewportRect)
             }
+        clipPath(path, clipOp = ClipOp.Difference) {
+            drawRect(Color.Black.copy(alpha = OVERLAY_ALPHA))
+        }
+        // Viewport border
+        drawRect(
+            color = Color.White,
+            topLeft = viewportRect.topLeft,
+            size = viewportRect.size,
+            style =
+                androidx.compose.ui.graphics.drawscope
+                    .Stroke(width = 2.dp.toPx()),
+        )
+    }
+}
+
+@Composable
+private fun CropControls(
+    onCancel: () -> Unit,
+    onConfirm: () -> Unit,
+) {
+    Row(
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .padding(32.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        IconButton(onClick = onCancel) {
+            Icon(Icons.Default.Close, contentDescription = "Cancel", tint = Color.White)
+        }
+
+        Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
+            Text("Crop Image", color = Color.White, style = MaterialTheme.typography.titleMedium)
+        }
+
+        IconButton(onClick = onConfirm) {
+            Icon(Icons.Default.Check, contentDescription = "Confirm", tint = MaterialTheme.colorScheme.primary)
         }
     }
 }
 
 private fun cropBitmap(
     source: Bitmap,
-    scale: Float,
-    offset: Offset,
-    viewportRect: Rect,
-    screenWidth: Float,
-    screenHeight: Float,
+    params: CropParams,
 ): Bitmap {
     val sourceAspect = source.width.toFloat() / source.height.toFloat()
-    val screenAspect = screenWidth / screenHeight
-    
-    val displayedWidth: Float
-    val displayedHeight: Float
-    
+    val screenAspect = params.screenWidth / params.screenHeight
+
+    val dispWidth: Float
+    val dispHeight: Float
+
     if (sourceAspect > screenAspect) {
-        displayedWidth = screenWidth
-        displayedHeight = screenWidth / sourceAspect
+        dispWidth = params.screenWidth
+        dispHeight = params.screenWidth / sourceAspect
     } else {
-        displayedHeight = screenHeight
-        displayedWidth = screenHeight * sourceAspect
+        dispHeight = params.screenHeight
+        dispWidth = params.screenHeight * sourceAspect
     }
-    
-    val left = (screenWidth - displayedWidth) / 2
-    val top = (screenHeight - displayedHeight) / 2
-    
-    val currentImageRect = Rect(
-        offset = Offset(
-            left * scale + offset.x - (displayedWidth * (scale - 1) / 2),
-            top * scale + offset.y - (displayedHeight * (scale - 1) / 2),
-        ),
-        size = Size(displayedWidth * scale, displayedHeight * scale),
-    )
-    
-    val scaleFactor = source.width.toFloat() / currentImageRect.width
-    
-    val srcLeft = (viewportRect.left - currentImageRect.left) * scaleFactor
-    val srcTop = (viewportRect.top - currentImageRect.top) * scaleFactor
-    val srcSize = viewportRect.width * scaleFactor
-    
-    val finalBitmap = Bitmap.createBitmap(
-        source,
-        max(0, srcLeft.toInt()),
-        max(0, srcTop.toInt()),
-        minOf(srcSize.toInt(), source.width - max(0, srcLeft.toInt())),
-        minOf(srcSize.toInt(), source.height - max(0, srcTop.toInt())),
-    )
-    
-    return finalBitmap.scale(1024, 1024)
+
+    val left = (params.screenWidth - dispWidth) / 2
+    val top = (params.screenHeight - dispHeight) / 2
+
+    val curRect =
+        Rect(
+            offset =
+                Offset(
+                    (left * params.scale + params.offset.x - (dispWidth * (params.scale - 1) / 2)),
+                    (top * params.scale + params.offset.y - (dispHeight * (params.scale - 1) / 2)),
+                ),
+            size = Size(dispWidth * params.scale, dispHeight * params.scale),
+        )
+
+    val factor = source.width.toFloat() / curRect.width
+    val srcL = (params.viewportRect.left - curRect.left) * factor
+    val srcT = (params.viewportRect.top - curRect.top) * factor
+    val srcS = params.viewportRect.width * factor
+
+    val finalBmp =
+        Bitmap.createBitmap(
+            source,
+            max(0, srcL.toInt()),
+            max(0, srcT.toInt()),
+            minOf(srcS.toInt(), source.width - max(0, srcL.toInt())),
+            minOf(srcS.toInt(), source.height - max(0, srcT.toInt())),
+        )
+
+    return finalBmp.scale(OUTPUT_IMAGE_SIZE, OUTPUT_IMAGE_SIZE)
 }

@@ -22,7 +22,10 @@ interface FeedbackManager {
     /**
      * Sets whether sound and vibration are enabled.
      */
-    fun setEnabled(soundEnabled: Boolean, vibrationEnabled: Boolean)
+    fun setEnabled(
+        soundEnabled: Boolean,
+        vibrationEnabled: Boolean,
+    )
 
     /**
      * Plays feedback for a tile move.
@@ -38,12 +41,12 @@ interface FeedbackManager {
      * Plays feedback for winning the game.
      */
     fun playVictoryFeedback()
-    
+
     /**
      * Plays feedback for a generic click or UI interaction.
      */
     fun playClickFeedback()
-    
+
     /**
      * Triggers a vibration effect to provide tactile feedback.
      */

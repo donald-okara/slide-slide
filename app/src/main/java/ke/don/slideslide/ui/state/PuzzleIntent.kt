@@ -21,23 +21,60 @@ import ke.don.slideslide.domain.model.Difficulty
 import ke.don.slideslide.domain.model.Move
 
 sealed interface PuzzleIntent {
-    data class ChangeDifficulty(val difficulty: Difficulty) : PuzzleIntent
-    data class MoveTile(val move: Move) : PuzzleIntent
-    data object Shuffle : PuzzleIntent
-    data object Undo : PuzzleIntent
-    data object Reset : PuzzleIntent
-    data object RequestHint : PuzzleIntent
-    data class SelectImage(val uri: Uri) : PuzzleIntent
-    data class ProcessImage(val bitmap: Bitmap, val difficulty: Difficulty) : PuzzleIntent
-    data object ClearImage : PuzzleIntent
-    data class ConfirmCrop(val bitmap: Bitmap) : PuzzleIntent
-    data object CancelCrop : PuzzleIntent
-    data object ShowImagePreview : PuzzleIntent
-    data object DismissImagePreview : PuzzleIntent
-    data object ToggleAutoSolve : PuzzleIntent
-    data object ToggleSound : PuzzleIntent
-    data object ToggleVibration : PuzzleIntent
-    data object DismissVictoryDialog : PuzzleIntent
-    data object PlayAgain : PuzzleIntent
-    data object ClearAll : PuzzleIntent
+    sealed interface GameAction : PuzzleIntent
+
+    sealed interface ImageAction : PuzzleIntent
+
+    sealed interface UiAction : PuzzleIntent
+
+    sealed interface SettingsAction : PuzzleIntent
+
+    data class ChangeDifficulty(
+        val difficulty: Difficulty,
+    ) : GameAction
+
+    data class MoveTile(
+        val move: Move,
+    ) : GameAction
+
+    data object Shuffle : GameAction
+
+    data object Undo : GameAction
+
+    data object Reset : GameAction
+
+    data object RequestHint : GameAction
+
+    data object ToggleAutoSolve : GameAction
+
+    data object PlayAgain : GameAction
+
+    data object ClearAll : GameAction
+
+    data class SelectImage(
+        val uri: Uri,
+    ) : ImageAction
+
+    data class ProcessImage(
+        val bitmap: Bitmap,
+        val difficulty: Difficulty,
+    ) : ImageAction
+
+    data class ConfirmCrop(
+        val bitmap: Bitmap,
+    ) : ImageAction
+
+    data object CancelCrop : ImageAction
+
+    data object ClearImage : ImageAction
+
+    data object ShowImagePreview : UiAction
+
+    data object DismissImagePreview : UiAction
+
+    data object DismissVictoryDialog : UiAction
+
+    data object ToggleSound : SettingsAction
+
+    data object ToggleVibration : SettingsAction
 }

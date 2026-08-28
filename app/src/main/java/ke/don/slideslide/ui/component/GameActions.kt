@@ -13,19 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ke.don.slideslide.ui.theme
+package ke.don.slideslide.ui.component
 
-import androidx.compose.ui.graphics.Color
+import androidx.compose.runtime.Immutable
 
-val Background = Color(0xFF1C1B20)
-val AccentPurple = Color(0xFFD0BCFF)
-val OnAccentPurple = Color(0xFF381E72)
-val SurfaceGrey = Color(0xFF3C393F)
-val TextGrey = Color(0xFF8F8E94)
-val OffWhite = Color(0xFFE6E1E5)
-
-val TileEmpty = Color(0xFF323035) // Shaded empty tile
-val TileBorder = Color(0xFF49454F) // Border color for tiles if needed
-
-val DialogBackground = Color(0xFF252329)
-val DisabledButton = Color(0xFF3C393F)
+@Immutable
+data class GameActions(
+    val onBack: () -> Unit,
+    val onShuffle: () -> Unit,
+    val onHint: () -> Unit,
+    val onAutoSolve: () -> Unit,
+)

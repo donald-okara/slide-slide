@@ -43,9 +43,15 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import ke.don.slideslide.ui.theme.DialogBackground
+import ke.don.slideslide.ui.theme.SurfaceGrey
+import ke.don.slideslide.ui.theme.TileBorder
 import ke.don.slideslide.ui.utils.SlidePreview
 import ke.don.slideslide.ui.utils.SlidePreviewContent
 import ke.don.slideslide.ui.utils.formatSeconds
+
+@Suppress("MagicNumber")
+private const val DIALOG_WIDTH_FRACTION = 0.9f
 
 @Composable
 fun VictoryDialog(
@@ -57,103 +63,148 @@ fun VictoryDialog(
 ) {
     Dialog(
         onDismissRequest = onDismiss,
-        properties = DialogProperties(usePlatformDefaultWidth = false)
+        properties = DialogProperties(usePlatformDefaultWidth = false),
     ) {
         Surface(
-            modifier = Modifier
-                .fillMaxWidth(0.9f)
-                .padding(16.dp),
+            modifier =
+                Modifier
+                    .fillMaxWidth(DIALOG_WIDTH_FRACTION)
+                    .padding(16.dp),
             shape = RoundedCornerShape(32.dp),
-            color = Color(0xFF252329),
-            tonalElevation = 8.dp
+            color = DialogBackground,
+            tonalElevation = 8.dp,
         ) {
-            Column(
-                modifier = Modifier
-                    .padding(32.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                Text(
-                    text = "🎉",
-                    fontSize = 48.sp,
-                    modifier = Modifier.padding(bottom = 16.dp)
-                )
-
-                Text(
-                    text = "Puzzle Solved!",
-                    style = MaterialTheme.typography.headlineSmall.copy(
-                        fontWeight = FontWeight.Bold,
-                        color = Color.White
-                    ),
-                    textAlign = TextAlign.Center
-                )
-
-                Text(
-                    text = "Excellent work! You completed the puzzle.",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.secondary,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier.padding(top = 8.dp)
-                )
-
-                Spacer(modifier = Modifier.height(32.dp))
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.Center,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    StatSummaryItem(label = "MOVES", value = moveCount.toString())
-                    
-                    Box(
-                        modifier = Modifier
-                            .padding(horizontal = 32.dp)
-                            .width(1.dp)
-                            .height(48.dp)
-                            .background(Color(0xFF3C393F))
-                    )
-
-                    StatSummaryItem(label = "TIME", value = formatSeconds(timerSeconds))
-                }
-
-                Spacer(modifier = Modifier.height(40.dp))
-
-                Button(
-                    onClick = onPlayAgain,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(56.dp),
-                    shape = RoundedCornerShape(28.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.primary,
-                        contentColor = Color.Black
-                    )
-                ) {
-                    Text(
-                        text = "Play Again",
-                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
-                    )
-                }
-
-                Spacer(modifier = Modifier.height(12.dp))
-
-                OutlinedButton(
-                    onClick = onChooseAnotherImage,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(56.dp),
-                    shape = RoundedCornerShape(28.dp),
-                    border = BorderStroke(1.dp, Color(0xFF49454F)),
-                    colors = ButtonDefaults.outlinedButtonColors(
-                        contentColor = Color.White
-                    )
-                ) {
-                    Text(
-                        text = "Choose Another Image",
-                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
-                    )
-                }
-            }
+            VictoryDialogContent(
+                moveCount = moveCount,
+                timerSeconds = timerSeconds,
+                onPlayAgain = onPlayAgain,
+                onChooseAnotherImage = onChooseAnotherImage,
+            )
         }
+    }
+}
+
+@Composable
+private fun VictoryDialogContent(
+    moveCount: Int,
+    timerSeconds: Long,
+    onPlayAgain: () -> Unit,
+    onChooseAnotherImage: () -> Unit,
+) {
+    Column(
+        modifier = Modifier.padding(32.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        VictoryHeader()
+
+        Spacer(modifier = Modifier.height(32.dp))
+
+        VictoryStats(moveCount, timerSeconds)
+
+        Spacer(modifier = Modifier.height(40.dp))
+
+        VictoryActions(
+            onPlayAgain = onPlayAgain,
+            onChooseAnotherImage = onChooseAnotherImage,
+        )
+    }
+}
+
+@Composable
+private fun VictoryHeader() {
+    Text(
+        text = "🎉",
+        fontSize = 48.sp,
+        modifier = Modifier.padding(bottom = 16.dp),
+    )
+
+    Text(
+        text = "Puzzle Solved!",
+        style =
+            MaterialTheme.typography.headlineSmall.copy(
+                fontWeight = FontWeight.Bold,
+                color = Color.White,
+            ),
+        textAlign = TextAlign.Center,
+    )
+
+    Text(
+        text = "Excellent work! You completed the puzzle.",
+        style = MaterialTheme.typography.bodyMedium,
+        color = MaterialTheme.colorScheme.secondary,
+        textAlign = TextAlign.Center,
+        modifier = Modifier.padding(top = 8.dp),
+    )
+}
+
+@Composable
+private fun VictoryStats(
+    moveCount: Int,
+    timerSeconds: Long,
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.Center,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        StatSummaryItem(label = "MOVES", value = moveCount.toString())
+
+        Box(
+            modifier =
+                Modifier
+                    .padding(horizontal = 32.dp)
+                    .width(1.dp)
+                    .height(48.dp)
+                    .background(SurfaceGrey),
+        )
+
+        StatSummaryItem(label = "TIME", value = formatSeconds(timerSeconds))
+    }
+}
+
+@Composable
+private fun VictoryActions(
+    onPlayAgain: () -> Unit,
+    onChooseAnotherImage: () -> Unit,
+) {
+    Button(
+        onClick = onPlayAgain,
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .height(56.dp),
+        shape = RoundedCornerShape(28.dp),
+        colors =
+            ButtonDefaults.buttonColors(
+                containerColor = MaterialTheme.colorScheme.primary,
+                contentColor = Color.Black,
+            ),
+    ) {
+        Text(
+            text = "Play Again",
+            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+        )
+    }
+
+    Spacer(modifier = Modifier.height(12.dp))
+
+    OutlinedButton(
+        onClick = onChooseAnotherImage,
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .height(56.dp),
+        shape = RoundedCornerShape(28.dp),
+        border = BorderStroke(1.dp, TileBorder),
+        colors =
+            ButtonDefaults.outlinedButtonColors(
+                contentColor = Color.White,
+            ),
+    ) {
+        Text(
+            text = "Choose Another Image",
+            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+        )
     }
 }
 
@@ -165,22 +216,25 @@ private fun StatSummaryItem(
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Text(
             text = value,
-            style = MaterialTheme.typography.headlineMedium.copy(
-                fontWeight = FontWeight.Bold,
-                color = Color.White
-            )
+            style =
+                MaterialTheme.typography.headlineMedium.copy(
+                    fontWeight = FontWeight.Bold,
+                    color = Color.White,
+                ),
         )
         Text(
             text = label,
-            style = MaterialTheme.typography.labelSmall.copy(
-                fontWeight = FontWeight.Bold,
-                letterSpacing = 1.sp
-            ),
-            color = MaterialTheme.colorScheme.secondary
+            style =
+                MaterialTheme.typography.labelSmall.copy(
+                    fontWeight = FontWeight.Bold,
+                    letterSpacing = 1.sp,
+                ),
+            color = MaterialTheme.colorScheme.secondary,
         )
     }
 }
 
+@Suppress("UnusedPrivateMember")
 @SlidePreview
 @Composable
 private fun VictoryDialogPreview() {
@@ -190,7 +244,7 @@ private fun VictoryDialogPreview() {
             timerSeconds = 125,
             onDismiss = {},
             onPlayAgain = {},
-            onChooseAnotherImage = {}
+            onChooseAnotherImage = {},
         )
     }
 }

@@ -42,7 +42,7 @@ class PuzzleManagerImpl
         private val isGameOverUseCase: IsGameOverUseCase,
         private val shuffleUseCase: ShuffleUseCase,
         private val solveUseCase: SolveUseCase,
-        @IoDispatcher private val ioDispatcher: CoroutineDispatcher,
+        @param:IoDispatcher private val ioDispatcher: CoroutineDispatcher,
     ) : PuzzleManager {
         override suspend fun createGame(difficulty: Difficulty): Game =
             withContext(ioDispatcher) {
@@ -56,7 +56,7 @@ class PuzzleManagerImpl
                             value = index,
                             currentPosition = index,
                             correctPosition = index,
-                            isBlank = index == totalTiles - 1,
+                            isBlank = index == (totalTiles - 1),
                         )
                     }
 

@@ -15,24 +15,13 @@
  */
 package ke.don.slideslide.ui.screen
 
-import androidx.annotation.RequiresApi
 import android.os.Build
-import androidx.compose.foundation.layout.Arrangement
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.VolumeOff
-import androidx.compose.material.icons.automirrored.filled.VolumeUp
-import androidx.compose.material.icons.filled.Vibration
-import androidx.compose.material.icons.filled.VolumeOff
-import androidx.compose.material.icons.filled.VolumeUp
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
@@ -42,10 +31,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import ke.don.slideslide.domain.model.Difficulty
+import ke.don.slideslide.ui.component.GameActions
 import ke.don.slideslide.ui.component.GameControls
 import ke.don.slideslide.ui.component.GameStats
 import ke.don.slideslide.ui.component.ImagePreviewDialog
 import ke.don.slideslide.ui.component.PuzzleBoard
+import ke.don.slideslide.ui.component.PuzzleBoardState
+import ke.don.slideslide.ui.component.SettingsBar
 import ke.don.slideslide.ui.component.VictoryDialog
 import ke.don.slideslide.ui.state.PuzzleIntent
 import ke.don.slideslide.ui.state.PuzzleUiState
@@ -88,61 +80,67 @@ fun PuzzleContent(
                     .padding(24.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.End
-            ) {
-                IconButton(onClick = { onIntent(PuzzleIntent.ToggleSound) }) {
-                    Icon(
-                        imageVector = if (uiState.isSoundEnabled) Icons.AutoMirrored.Filled.VolumeUp else Icons.AutoMirrored.Filled.VolumeOff,
-                        contentDescription = "Toggle Sound",
-                        tint = if (uiState.isSoundEnabled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.secondary
-                    )
-                }
-                IconButton(onClick = { onIntent(PuzzleIntent.ToggleVibration) }) {
-                    Icon(
-                        imageVector = Icons.Default.Vibration,
-                        contentDescription = "Toggle Vibration",
-                        tint = if (uiState.isVibrationEnabled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.secondary
-                    )
-                }
-            }
+            SettingsBar(
+                isSoundEnabled = uiState.isSoundEnabled,
+                isVibrationEnabled = uiState.isVibrationEnabled,
+                onToggleSound = { onIntent(PuzzleIntent.ToggleSound) },
+                onToggleVibration = { onIntent(PuzzleIntent.ToggleVibration) },
+            )
 
             GameStats(
                 moveCount = uiState.moveCount,
                 timerSeconds = uiState.timerSeconds,
                 imageBitmap = uiState.originalImage,
-                onImageClick = { onIntent(PuzzleIntent.ShowImagePreview) }
+                onImageClick = { onIntent(PuzzleIntent.ShowImagePreview) },
             )
 
             Spacer(modifier = Modifier.weight(1f))
 
             PuzzleBoard(
-                tiles = uiState.tiles,
-                difficulty = uiState.difficulty,
-                gameId = uiState.gameId,
+                state =
+                    PuzzleBoardState(
+                        tiles = uiState.tiles,
+                        difficulty = uiState.difficulty,
+                        gameId = uiState.gameId,
+                        imageTiles = uiState.imageTiles,
+                        highlightedPosition =
+                            if (uiState.isHintActive) {
+                                uiState.solutionMoves.firstOrNull()?.fromPosition
+                            } else {
+                                null
+                            },
+                    ),
                 onTileClick = { onIntent(PuzzleIntent.MoveTile(it)) },
-                imageTiles = uiState.imageTiles,
-                highlightedPosition = if (uiState.isHintActive) uiState.solutionMoves.firstOrNull()?.fromPosition else null
             )
 
             Spacer(modifier = Modifier.weight(1f))
 
             GameControls(
-                onBack = onBackClick,
-                onShuffle = { onIntent(PuzzleIntent.Shuffle) },
-                onHint = { onIntent(PuzzleIntent.RequestHint) },
-                onAutoSolve = { onIntent(PuzzleIntent.ToggleAutoSolve) },
-                isAutoSolving = uiState.isAutoSolving
+                actions =
+                    GameActions(
+                        onBack = onBackClick,
+                        onShuffle = { onIntent(PuzzleIntent.Shuffle) },
+                        onHint = { onIntent(PuzzleIntent.RequestHint) },
+                        onAutoSolve = { onIntent(PuzzleIntent.ToggleAutoSolve) },
+                    ),
+                isAutoSolving = uiState.isAutoSolving,
             )
         }
     }
 
-    if (uiState.showImagePreview && uiState.originalImage != null) {
+    PuzzleDialogs(uiState, onIntent, onBackClick)
+}
+
+@Composable
+private fun PuzzleDialogs(
+    uiState: PuzzleUiState,
+    onIntent: (PuzzleIntent) -> Unit,
+    onBackClick: () -> Unit,
+) {
+    if (uiState.showImagePreview && (uiState.originalImage != null)) {
         ImagePreviewDialog(
             bitmap = uiState.originalImage,
-            onDismiss = { onIntent(PuzzleIntent.DismissImagePreview) }
-        )
+        ) { onIntent(PuzzleIntent.DismissImagePreview) }
     }
 
     if (uiState.showVictoryDialog) {
@@ -154,11 +152,12 @@ fun PuzzleContent(
             onChooseAnotherImage = {
                 onIntent(PuzzleIntent.DismissVictoryDialog)
                 onBackClick()
-            }
+            },
         )
     }
 }
 
+@Suppress("UnusedPrivateMember")
 @SlideScreenPreview
 @Composable
 private fun PuzzleContentPreview() {

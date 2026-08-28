@@ -42,6 +42,7 @@ import kotlinx.serialization.Serializable
 @Serializable
 sealed interface PuzzleRoute : NavKey {
     @Serializable data object Setup : PuzzleRoute
+
     @Serializable data object Game : PuzzleRoute
 }
 
@@ -58,11 +59,12 @@ class MainActivity : ComponentActivity() {
                 val lifecycleOwner = LocalLifecycleOwner.current
 
                 DisposableEffect(lifecycleOwner) {
-                    val observer = LifecycleEventObserver { _, event ->
-                        if (event == Lifecycle.Event.ON_STOP) {
-                            viewModel.onIntent(PuzzleIntent.ClearAll)
+                    val observer =
+                        LifecycleEventObserver { _, event ->
+                            if (event == Lifecycle.Event.ON_STOP) {
+                                viewModel.onIntent(PuzzleIntent.ClearAll)
+                            }
                         }
-                    }
                     lifecycleOwner.lifecycle.addObserver(observer)
                     onDispose {
                         lifecycleOwner.lifecycle.removeObserver(observer)
@@ -79,24 +81,23 @@ class MainActivity : ComponentActivity() {
                     },
                     entryProvider = { key ->
                         when (key) {
-                            PuzzleRoute.Setup -> NavEntry(key) {
-                                SetupScreen(
-                                    viewModel = viewModel,
-                                    onStartGame = { backStack.add(PuzzleRoute.Game) }
-                                )
-                            }
-                            PuzzleRoute.Game -> NavEntry(key) {
-                                PuzzleScreen(
-                                    viewModel = viewModel,
-                                    onNavigateBack = {
-                                        backStack.removeLastOrNull()
-                                        viewModel.onIntent(PuzzleIntent.ClearAll)
-                                    }
-                                )
-                            }
+                            PuzzleRoute.Setup ->
+                                NavEntry(key) {
+                                    SetupScreen(viewModel) { backStack.add(PuzzleRoute.Game) }
+                                }
+                            PuzzleRoute.Game ->
+                                NavEntry(key) {
+                                    PuzzleScreen(
+                                        viewModel = viewModel,
+                                        onNavigateBack = {
+                                            backStack.removeLastOrNull()
+                                            viewModel.onIntent(PuzzleIntent.ClearAll)
+                                        },
+                                    )
+                                }
                             else -> error("Unknown route: $key")
                         }
-                    }
+                    },
                 )
             }
         }

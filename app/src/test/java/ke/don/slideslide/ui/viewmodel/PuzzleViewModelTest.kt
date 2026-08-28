@@ -19,7 +19,6 @@ import android.graphics.Bitmap
 import android.net.Uri
 import androidx.arch.core.executor.testing.InstantTaskExecutorRule
 import androidx.lifecycle.viewModelScope
-import ke.don.slideslide.domain.image.BitmapCacheImpl
 import ke.don.slideslide.domain.image.BitmapSlicerImpl
 import ke.don.slideslide.domain.manager.FeedbackManager
 import ke.don.slideslide.domain.manager.PuzzleManager
@@ -176,7 +175,7 @@ class PuzzleViewModelTest {
                 runCurrent()
                 assertEquals(1, viewModel.uiState.value.solutionMoves.size)
 
-                viewModel.clearAll()
+                viewModel.onIntent(PuzzleIntent.ClearAll)
                 runCurrent()
 
                 assertEquals(emptyList<Move>(), viewModel.uiState.value.solutionMoves)
@@ -287,10 +286,10 @@ class PuzzleViewModelTest {
 
             try {
                 assertEquals(true, viewModel.uiState.value.isSoundEnabled)
-                
+
                 viewModel.onIntent(PuzzleIntent.ToggleSound)
                 runCurrent()
-                
+
                 assertEquals(false, viewModel.uiState.value.isSoundEnabled)
                 assertEquals(false, feedback.soundEnabled)
             } finally {
@@ -306,10 +305,10 @@ class PuzzleViewModelTest {
 
             try {
                 assertEquals(true, viewModel.uiState.value.isVibrationEnabled)
-                
+
                 viewModel.onIntent(PuzzleIntent.ToggleVibration)
                 runCurrent()
-                
+
                 assertEquals(false, viewModel.uiState.value.isVibrationEnabled)
                 assertEquals(false, feedback.vibrationEnabled)
             } finally {
@@ -349,7 +348,6 @@ class PuzzleViewModelTest {
             feedbackManager = feedback,
             clock = clock,
             bitmapSlicer = BitmapSlicerImpl(),
-            bitmapCache = BitmapCacheImpl(),
         )
 
     private class TestClock(
@@ -431,7 +429,10 @@ class PuzzleViewModelTest {
         var vibrationEnabled = true
         var isReleased = false
 
-        override fun setEnabled(soundEnabled: Boolean, vibrationEnabled: Boolean) {
+        override fun setEnabled(
+            soundEnabled: Boolean,
+            vibrationEnabled: Boolean,
+        ) {
             this.soundEnabled = soundEnabled
             this.vibrationEnabled = vibrationEnabled
         }

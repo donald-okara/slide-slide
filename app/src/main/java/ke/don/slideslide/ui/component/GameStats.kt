@@ -26,8 +26,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -65,21 +63,22 @@ fun GameStats(
             Spacer(modifier = Modifier.width(24.dp))
             StatItem(label = "TIME", value = formatSeconds(timerSeconds))
         }
-        
+
         if (imageBitmap != null) {
             Box(
-                modifier = Modifier
-                    .size(48.dp)
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(MaterialTheme.colorScheme.surface)
-                    .clickable(onClick = onImageClick),
-                contentAlignment = Alignment.Center
+                modifier =
+                    Modifier
+                        .size(48.dp)
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(MaterialTheme.colorScheme.surface)
+                        .clickable(onClick = onImageClick),
+                contentAlignment = Alignment.Center,
             ) {
                 Image(
                     bitmap = imageBitmap.asImageBitmap(),
                     contentDescription = "Target Image",
                     modifier = Modifier.fillMaxSize(),
-                    contentScale = ContentScale.Fit
+                    contentScale = ContentScale.Fit,
                 )
             }
         }
@@ -94,22 +93,25 @@ private fun StatItem(
     Column {
         Text(
             text = label,
-            style = MaterialTheme.typography.labelSmall.copy(
-                fontWeight = FontWeight.Bold,
-                letterSpacing = 1.sp
-            ),
+            style =
+                MaterialTheme.typography.labelSmall.copy(
+                    fontWeight = FontWeight.Bold,
+                    letterSpacing = 1.sp,
+                ),
             color = MaterialTheme.colorScheme.secondary,
         )
         Text(
             text = value,
-            style = MaterialTheme.typography.headlineSmall.copy(
-                fontWeight = FontWeight.Bold
-            ),
+            style =
+                MaterialTheme.typography.headlineSmall.copy(
+                    fontWeight = FontWeight.Bold,
+                ),
             color = Color.White,
         )
     }
 }
 
+@Suppress("UnusedPrivateMember")
 @SlidePreview
 @Composable
 private fun GameStatsPreview() {
@@ -118,7 +120,7 @@ private fun GameStatsPreview() {
             moveCount = 42,
             timerSeconds = 125,
             imageBitmap = null,
-            onImageClick = {}
+            onImageClick = {},
         )
     }
 }

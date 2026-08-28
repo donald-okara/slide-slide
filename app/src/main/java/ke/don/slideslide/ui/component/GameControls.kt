@@ -22,7 +22,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
@@ -44,16 +43,14 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import ke.don.slideslide.ui.theme.SurfaceGrey
 import ke.don.slideslide.ui.utils.SlidePreview
 import ke.don.slideslide.ui.utils.SlidePreviewContent
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun GameControls(
-    onBack: () -> Unit,
-    onShuffle: () -> Unit,
-    onHint: () -> Unit,
-    onAutoSolve: () -> Unit,
+    actions: GameActions,
     isAutoSolving: Boolean,
     modifier: Modifier = Modifier,
 ) {
@@ -61,21 +58,31 @@ fun GameControls(
         modifier = modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
-        maxItemsInEachRow = 2
+        maxItemsInEachRow = 2,
     ) {
-        ControlPill(label = "Back", icon = Icons.AutoMirrored.Filled.ArrowBack, onClick = onBack, modifier = Modifier.weight(1f))
-        ControlPill(label = "Shuffle", icon = Icons.Default.Shuffle, onClick = onShuffle, modifier = Modifier.weight(1f))
+        ControlPill(
+            label = "Back",
+            icon = Icons.AutoMirrored.Filled.ArrowBack,
+            onClick = actions.onBack,
+            modifier = Modifier.weight(1f),
+        )
+        ControlPill(
+            label = "Shuffle",
+            icon = Icons.Default.Shuffle,
+            onClick = actions.onShuffle,
+            modifier = Modifier.weight(1f),
+        )
         ControlPill(
             label = "Hint",
             icon = Icons.Default.Lightbulb,
-            onClick = onHint,
-            modifier = Modifier.weight(1f)
+            onClick = actions.onHint,
+            modifier = Modifier.weight(1f),
         )
         ControlPill(
             label = if (isAutoSolving) "Stop" else "Solve",
             icon = if (isAutoSolving) Icons.Default.StopCircle else Icons.Default.PlayCircle,
-            onClick = onAutoSolve,
-            modifier = Modifier.weight(1f)
+            onClick = actions.onAutoSolve,
+            modifier = Modifier.weight(1f),
         )
     }
 }
@@ -91,37 +98,42 @@ private fun ControlPill(
         onClick = onClick,
         modifier = modifier.height(56.dp),
         shape = CircleShape,
-        colors = ButtonDefaults.buttonColors(
-            containerColor = Color(0xFF3C393F),
-            contentColor = Color.White
-        ),
-        elevation = ButtonDefaults.buttonElevation(defaultElevation = 0.dp)
+        colors =
+            ButtonDefaults.buttonColors(
+                containerColor = SurfaceGrey,
+                contentColor = Color.White,
+            ),
+        elevation = ButtonDefaults.buttonElevation(defaultElevation = 0.dp),
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Icon(
                 imageVector = icon,
                 contentDescription = null,
-                modifier = Modifier.size(20.dp)
+                modifier = Modifier.size(20.dp),
             )
             Spacer(modifier = Modifier.width(8.dp))
             Text(
                 text = label,
-                style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold)
+                style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
             )
         }
     }
 }
 
+@Suppress("UnusedPrivateMember")
 @SlidePreview
 @Composable
 private fun GameControlsPreview() {
     SlidePreviewContent {
         GameControls(
-            onBack = {},
-            onShuffle = {},
-            onHint = {},
-            onAutoSolve = {},
-            isAutoSolving = false
+            actions =
+                GameActions(
+                    onBack = {},
+                    onShuffle = {},
+                    onHint = {},
+                    onAutoSolve = {},
+                ),
+            isAutoSolving = false,
         )
     }
 }

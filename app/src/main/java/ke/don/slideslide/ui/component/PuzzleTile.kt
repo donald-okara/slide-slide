@@ -17,7 +17,6 @@ package ke.don.slideslide.ui.component
 
 import android.graphics.Bitmap
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
@@ -31,9 +30,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.drawscope.Stroke
@@ -42,8 +39,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import ke.don.slideslide.domain.model.Tile
 import ke.don.slideslide.ui.theme.OnAccentPurple
+import ke.don.slideslide.ui.theme.TileBorder
 import ke.don.slideslide.ui.utils.SlidePreview
 import ke.don.slideslide.ui.utils.SlidePreviewContent
+
+private const val DASH_LENGTH = 10f
+private val TILE_CORNER_RADIUS = 12.dp
 
 @Composable
 fun PuzzleTile(
@@ -54,32 +55,57 @@ fun PuzzleTile(
     isHighlighted: Boolean = false,
 ) {
     if (tile.isBlank) {
-        Box(
-            modifier =
-                modifier
-                    .fillMaxSize()
-                    .padding(4.dp)
-                    .drawBehind {
-                        val stroke = Stroke(
-                            width = 2.dp.toPx(),
-                            pathEffect = PathEffect.dashPathEffect(floatArrayOf(10f, 10f), 0f)
-                        )
-                        drawRoundRect(
-                            color = Color(0xFF49454F),
-                            style = stroke,
-                            cornerRadius = androidx.compose.ui.geometry.CornerRadius(12.dp.toPx())
-                        )
-                    }
-        )
-        return
-    }
-
-    val highlightColor = MaterialTheme.colorScheme.primary
-    val borderModifier = if (isHighlighted) {
-        Modifier.border(3.dp, highlightColor, RoundedCornerShape(12.dp))
+        BlankTilePlaceholder(modifier)
     } else {
-        Modifier
+        NumberOrImageTile(
+            tile = tile,
+            onClick = onClick,
+            modifier = modifier,
+            bitmap = bitmap,
+            isHighlighted = isHighlighted,
+        )
     }
+}
+
+@Composable
+private fun BlankTilePlaceholder(modifier: Modifier = Modifier) {
+    Box(
+        modifier =
+            modifier
+                .fillMaxSize()
+                .padding(4.dp)
+                .drawBehind {
+                    val stroke =
+                        Stroke(
+                            width = 2.dp.toPx(),
+                            pathEffect = PathEffect.dashPathEffect(floatArrayOf(DASH_LENGTH, DASH_LENGTH), 0f),
+                        )
+                    drawRoundRect(
+                        color = TileBorder,
+                        style = stroke,
+                        cornerRadius =
+                            androidx.compose.ui.geometry
+                                .CornerRadius(TILE_CORNER_RADIUS.toPx()),
+                    )
+                },
+    )
+}
+
+@Composable
+private fun NumberOrImageTile(
+    tile: Tile,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    bitmap: Bitmap? = null,
+    isHighlighted: Boolean = false,
+) {
+    val highlightColor = MaterialTheme.colorScheme.primary
+    val borderModifier =
+        if (isHighlighted) {
+            Modifier.border(3.dp, highlightColor, RoundedCornerShape(TILE_CORNER_RADIUS))
+        } else {
+            Modifier
+        }
 
     Card(
         modifier =
@@ -88,7 +114,7 @@ fun PuzzleTile(
                 .padding(4.dp)
                 .then(borderModifier)
                 .clickable(onClick = onClick),
-        shape = RoundedCornerShape(12.dp),
+        shape = RoundedCornerShape(TILE_CORNER_RADIUS),
         colors =
             CardDefaults.cardColors(
                 containerColor = MaterialTheme.colorScheme.primary,
@@ -100,24 +126,35 @@ fun PuzzleTile(
             contentAlignment = Alignment.Center,
         ) {
             if (bitmap != null) {
-                Image(
-                    bitmap = bitmap.asImageBitmap(),
-                    contentDescription = null,
-                    modifier = Modifier.fillMaxSize(),
-                    contentScale = ContentScale.Crop,
-                )
+                TileImage(bitmap)
             } else {
-                Text(
-                    text = tile.value.toString(),
-                    style = MaterialTheme.typography.headlineMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = OnAccentPurple,
-                )
+                TileNumber(tile.value)
             }
         }
     }
 }
 
+@Composable
+private fun TileImage(bitmap: Bitmap) {
+    Image(
+        bitmap = bitmap.asImageBitmap(),
+        contentDescription = null,
+        modifier = Modifier.fillMaxSize(),
+        contentScale = ContentScale.Crop,
+    )
+}
+
+@Composable
+private fun TileNumber(value: Int) {
+    Text(
+        text = value.toString(),
+        style = MaterialTheme.typography.headlineMedium,
+        fontWeight = FontWeight.Bold,
+        color = OnAccentPurple,
+    )
+}
+
+@Suppress("UnusedPrivateMember")
 @SlidePreview
 @Composable
 private fun PuzzleTilePreview() {

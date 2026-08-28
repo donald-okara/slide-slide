@@ -15,14 +15,11 @@
  */
 package ke.don.slideslide.ui.viewmodel
 
-import android.graphics.Bitmap
-import android.net.Uri
 import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
-import ke.don.slideslide.domain.image.BitmapCache
 import ke.don.slideslide.domain.image.BitmapSlicer
 import ke.don.slideslide.domain.manager.FeedbackManager
 import ke.don.slideslide.domain.manager.PuzzleManager
@@ -52,7 +49,6 @@ class PuzzleViewModel
         private val feedbackManager: FeedbackManager,
         private val clock: Clock,
         private val bitmapSlicer: BitmapSlicer,
-        private val bitmapCache: BitmapCache,
     ) : ViewModel() {
         private val _uiState = MutableStateFlow(PuzzleUiState())
         private var autoSolveJob: Job? = null
@@ -66,59 +62,152 @@ class PuzzleViewModel
 
         @RequiresApi(Build.VERSION_CODES.O)
         fun onIntent(intent: PuzzleIntent) {
-            playClickFeedback()
+            feedbackManager.playClickFeedback()
             when (intent) {
-                is PuzzleIntent.ChangeDifficulty -> createGame(intent.difficulty)
-                is PuzzleIntent.MoveTile -> moveTile(intent.move)
-                PuzzleIntent.Shuffle -> shuffle()
-                PuzzleIntent.Undo -> undo()
-                PuzzleIntent.Reset -> reset()
-                PuzzleIntent.RequestHint -> requestSolution()
-                PuzzleIntent.ToggleAutoSolve -> toggleAutoSolve()
-                PuzzleIntent.ToggleSound -> toggleSound()
-                PuzzleIntent.ToggleVibration -> toggleVibration()
-                is PuzzleIntent.SelectImage -> selectImage(intent.uri)
-                is PuzzleIntent.ProcessImage -> processSelectedImage(intent.bitmap, intent.difficulty)
-                is PuzzleIntent.ConfirmCrop -> confirmCrop(intent.bitmap)
-                PuzzleIntent.CancelCrop -> cancelCrop()
-                PuzzleIntent.ClearImage -> clearSelectedImage()
-                PuzzleIntent.ShowImagePreview -> updateState { copy(showImagePreview = true) }
-                PuzzleIntent.DismissImagePreview -> updateState { copy(showImagePreview = false) }
-                PuzzleIntent.DismissVictoryDialog -> updateState { copy(showVictoryDialog = false) }
-                PuzzleIntent.PlayAgain -> {
-                    updateState { copy(showVictoryDialog = false) }
-                    shuffle()
-                }
-                PuzzleIntent.ClearAll -> clearAll()
+                is PuzzleIntent.GameAction -> handleGameAction(intent)
+                is PuzzleIntent.ImageAction -> handleImageAction(intent)
+                is PuzzleIntent.SettingsAction -> handleSettings(intent)
+                is PuzzleIntent.UiAction -> handleUi(intent)
             }
         }
 
         @RequiresApi(Build.VERSION_CODES.O)
+        private fun handleGameAction(action: PuzzleIntent.GameAction) =
+            when (action) {
+                is PuzzleIntent.ChangeDifficulty -> createGame(action.difficulty)
+                is PuzzleIntent.MoveTile -> moveTile(action.move)
+                PuzzleIntent.Shuffle ->
+                    performAction {
+                        if (uiState.value.tiles.isEmpty()) {
+                            puzzleManager.createGame(uiState.value.difficulty)
+                        } else {
+                            puzzleManager.shuffle()
+                        }
+                    }
+                PuzzleIntent.Undo ->
+                    executeAction {
+                        if (puzzleManager.undo()) {
+                            updateState {
+                                copy(
+                                    isHintActive = false,
+                                    solutionMoves = emptyList(),
+                                    showVictoryDialog = false,
+                                )
+                            }
+                        }
+                    }
+                PuzzleIntent.Reset -> performAction { puzzleManager.reset() }
+                PuzzleIntent.RequestHint ->
+                    executeAction {
+                        val sol = puzzleManager.autoSolve().orEmpty()
+                        if (sol.isNotEmpty()) feedbackManager.playHintFeedback()
+                        updateState { copy(isHintActive = true, solutionMoves = sol) }
+                    }
+                PuzzleIntent.ToggleAutoSolve -> toggleAutoSolve()
+                PuzzleIntent.PlayAgain -> {
+                    updateState { copy(showVictoryDialog = false) }
+                    onIntent(PuzzleIntent.Shuffle)
+                }
+                PuzzleIntent.ClearAll ->
+                    executeAction {
+                        puzzleManager.clearAll()
+                        updateState {
+                            copy(
+                                tiles = emptyList(),
+                                moveCount = 0,
+                                isWon = false,
+                                showVictoryDialog = false,
+                                timerSeconds = 0,
+                                gameStartTime = null,
+                                gameEndTime = null,
+                                solutionMoves = emptyList(),
+                                selectedImageUri = null,
+                                imageTiles = emptyList(),
+                            )
+                        }
+                    }
+            }
+
+        private fun handleImageAction(action: PuzzleIntent.ImageAction) =
+            when (action) {
+                is PuzzleIntent.SelectImage ->
+                    updateState {
+                        copy(
+                            selectedImageUri = action.uri,
+                            isCropping = true,
+                            originalImage = null,
+                            error = null,
+                        )
+                    }
+                is PuzzleIntent.ProcessImage ->
+                    updateState {
+                        copy(croppingImage = action.bitmap, difficulty = action.difficulty)
+                    }
+                is PuzzleIntent.ConfirmCrop ->
+                    executeAction {
+                        val diff = uiState.value.difficulty
+                        val tiles = bitmapSlicer.slice(action.bitmap, diff)
+                        puzzleManager.createGame(diff)
+                        updateState {
+                            copy(
+                                originalImage = action.bitmap,
+                                imageTiles = tiles,
+                                isCropping = false,
+                            )
+                        }
+                    }
+                is PuzzleIntent.CancelCrop ->
+                    updateState {
+                        copy(isCropping = false, selectedImageUri = null)
+                    }
+                is PuzzleIntent.ClearImage ->
+                    updateState {
+                        copy(selectedImageUri = null, originalImage = null)
+                    }
+            }
+
+        private fun handleSettings(action: PuzzleIntent.SettingsAction) =
+            when (action) {
+                PuzzleIntent.ToggleSound ->
+                    updateState {
+                        val newValue = !isSoundEnabled
+                        feedbackManager.setEnabled(newValue, isVibrationEnabled)
+                        copy(isSoundEnabled = newValue)
+                    }
+                PuzzleIntent.ToggleVibration ->
+                    updateState {
+                        val newValue = !isVibrationEnabled
+                        feedbackManager.setEnabled(isSoundEnabled, newValue)
+                        copy(isVibrationEnabled = newValue)
+                    }
+            }
+
+        private fun handleUi(action: PuzzleIntent.UiAction) =
+            when (action) {
+                PuzzleIntent.ShowImagePreview -> updateState { copy(showImagePreview = true) }
+                PuzzleIntent.DismissImagePreview -> updateState { copy(showImagePreview = false) }
+                PuzzleIntent.DismissVictoryDialog -> updateState { copy(showVictoryDialog = false) }
+            }
+
+        @RequiresApi(Build.VERSION_CODES.O)
         private fun observeGame() {
             viewModelScope.launch {
-                var isFirstEmission = true
+                var isFirst = true
                 puzzleManager.observeGame().collect { game ->
                     updateState {
-                        val isNewlyWon = !isFirstEmission && game?.isWon == true && !isWon
-                        isFirstEmission = false
-                        if (isNewlyWon) {
-                            feedbackManager.playVictoryFeedback()
-                        }
+                        val isNewlyWon = !isFirst && (game?.isWon == true) && !isWon
+                        isFirst = false
+                        if (isNewlyWon) feedbackManager.playVictoryFeedback()
                         copy(
                             gameId = game?.id ?: 0L,
-                            tiles = game?.tiles?.sortedBy { it.id }.orEmpty(),
                             moveCount = game?.moveCount ?: 0,
+                            tiles = game?.tiles?.sortedBy { it.id }.orEmpty(),
                             isWon = game?.isWon ?: false,
                             showVictoryDialog = if (isNewlyWon) true else showVictoryDialog,
                             difficulty = game?.difficulty ?: difficulty,
                             gameStartTime = game?.startTime,
                             gameEndTime = game?.endTime,
-                            timerSeconds =
-                                calculateElapsedSeconds(
-                                    game?.startTime,
-                                    game?.endTime,
-                                    clock,
-                                ),
+                            timerSeconds = calculateElapsedSeconds(game?.startTime, game?.endTime, clock),
                         )
                     }
                 }
@@ -131,10 +220,7 @@ class PuzzleViewModel
                 while (isActive) {
                     updateState {
                         if (gameStartTime != null && !isWon) {
-                            copy(
-                                timerSeconds =
-                                    calculateElapsedSeconds(gameStartTime, gameEndTime, clock),
-                            )
+                            copy(timerSeconds = calculateElapsedSeconds(gameStartTime, gameEndTime, clock))
                         } else {
                             this
                         }
@@ -156,279 +242,90 @@ class PuzzleViewModel
             executeAction {
                 puzzleManager.createGame(difficulty)
                 updateState {
-                    val newImageTiles = originalImage?.let {
-                        bitmapSlicer.slice(it, difficulty)
-                    } ?: emptyList()
-                    copy(
-                        difficulty = difficulty,
-                        imageTiles = newImageTiles,
-                    )
+                    val original = uiState.value.originalImage
+                    val newTiles = original?.let { bitmapSlicer.slice(it, difficulty) } ?: emptyList()
+                    copy(difficulty = difficulty, imageTiles = newTiles)
                 }
-            }
-        }
-
-        private fun selectImage(uri: Uri) {
-            updateState {
-                copy(
-                    selectedImageUri = uri,
-                    isCropping = true,
-                    originalImage = null,
-                    croppingImage = null,
-                    imageTiles = emptyList(),
-                    error = null,
-                )
-            }
-        }
-
-        private fun processSelectedImage(
-            bitmap: Bitmap,
-            difficulty: Difficulty,
-        ) {
-            updateState {
-                copy(
-                    croppingImage = bitmap,
-                    difficulty = difficulty,
-                )
-            }
-        }
-
-        private fun confirmCrop(bitmap: Bitmap) {
-            executeAction {
-                val difficulty = uiState.value.difficulty
-                val tiles = bitmapSlicer.slice(bitmap, difficulty)
-                
-                // Ensure a game is created so tiles are available in the grid
-                puzzleManager.createGame(difficulty)
-
-                updateState {
-                    copy(
-                        originalImage = bitmap,
-                        imageTiles = tiles,
-                        isCropping = false,
-                        croppingImage = null,
-                    )
-                }
-            }
-        }
-
-        private fun cancelCrop() {
-            updateState {
-                copy(
-                    isCropping = false,
-                    selectedImageUri = null,
-                    croppingImage = null,
-                )
-            }
-        }
-
-        private fun clearSelectedImage() {
-            updateState {
-                copy(
-                    selectedImageUri = null,
-                    originalImage = null,
-                    imageTiles = emptyList(),
-                )
             }
         }
 
         private fun toggleAutoSolve() {
             if (uiState.value.isAutoSolving) {
-                stopAutoSolve()
+                autoSolveJob?.cancel()
+                updateState { copy(isAutoSolving = false) }
             } else {
-                startAutoSolve()
-            }
-        }
-
-        private fun toggleSound() {
-            updateState {
-                val newValue = !isSoundEnabled
-                feedbackManager.setEnabled(newValue, isVibrationEnabled)
-                copy(isSoundEnabled = newValue)
-            }
-        }
-
-        private fun toggleVibration() {
-            updateState {
-                val newValue = !isVibrationEnabled
-                feedbackManager.setEnabled(isSoundEnabled, newValue)
-                copy(isVibrationEnabled = newValue)
-            }
-        }
-
-        private fun startAutoSolve() {
-            autoSolveJob?.cancel()
-            autoSolveJob =
-                viewModelScope.launch {
-                    updateState { copy(isAutoSolving = true, solutionMoves = emptyList()) }
-                    val solution = puzzleManager.autoSolve()
-                    if (solution != null) {
-                        for (move in solution) {
-                            if (!isActive) break
+                autoSolveJob?.cancel()
+                autoSolveJob =
+                    viewModelScope.launch {
+                        updateState { copy(isAutoSolving = true, solutionMoves = emptyList()) }
+                        puzzleManager.autoSolve()?.forEach { move ->
+                            if (!isActive) return@forEach
                             moveTile(move, isAutoMove = true)
                             delay(AUTO_SOLVE_INTERVAL_MILLIS.milliseconds)
                         }
+                        updateState { copy(isAutoSolving = false) }
                     }
+            }
+        }
+
+        private fun moveTile(
+            move: Move,
+            isAutoMove: Boolean = false,
+        ) = executeAction {
+            if (puzzleManager.moveTile(move)) {
+                if (!isAutoMove) {
+                    autoSolveJob?.cancel()
                     updateState { copy(isAutoSolving = false) }
                 }
-        }
-
-        private fun stopAutoSolve() {
-            autoSolveJob?.cancel()
-            updateState { copy(isAutoSolving = false) }
-        }
-
-        private fun moveTile(move: Move, isAutoMove: Boolean = false) {
-            executeAction {
-                if (puzzleManager.moveTile(move)) {
-                    if (!isAutoMove) {
-                        stopAutoSolve()
-                    }
-                    feedbackManager.playMoveFeedback()
-                    updateState {
-                        val recommendedMove = solutionMoves.firstOrNull()
-                        val followsRecommendation =
-                            recommendedMove != null &&
-                                recommendedMove.fromPosition == move.fromPosition &&
-                                recommendedMove.toPosition == move.toPosition
-
-                        copy(
-                            isHintActive = false,
-                            solutionMoves =
-                                when {
-                                    recommendedMove == null -> solutionMoves
-                                    followsRecommendation -> solutionMoves.drop(1)
-                                    else -> emptyList()
-                                },
-                        )
-                    }
-                }
-            }
-        }
-
-        private fun shuffle() {
-            updateState {
-                copy(
-                    isWon = false,
-                    showVictoryDialog = false,
-                    isHintActive = false,
-                    solutionMoves = emptyList(),
-                )
-            }
-            executeAction {
-                if (uiState.value.tiles.isEmpty()) {
-                    puzzleManager.createGame(uiState.value.difficulty)
-                } else {
-                    puzzleManager.shuffle()
-                }
-            }
-        }
-
-        private fun undo() {
-            executeAction {
-                if (puzzleManager.undo()) {
-                    updateState {
-                        copy(
-                            isHintActive = false,
-                            solutionMoves = emptyList(),
-                            showVictoryDialog = false,
-                        )
-                    }
-                }
-            }
-        }
-
-        private fun reset() {
-            updateState {
-                copy(
-                    isWon = false,
-                    showVictoryDialog = false,
-                    isHintActive = false,
-                    solutionMoves = emptyList(),
-                )
-            }
-            executeAction {
-                puzzleManager.reset()
-            }
-        }
-
-        fun clearAll() {
-            executeAction {
-                puzzleManager.clearAll()
+                feedbackManager.playMoveFeedback()
                 updateState {
+                    val followsRec =
+                        solutionMoves.firstOrNull()?.let {
+                            it.fromPosition == move.fromPosition && it.toPosition == move.toPosition
+                        } ?: false
                     copy(
-                        tiles = emptyList(),
-                        moveCount = 0,
-                        isWon = false,
-                        showVictoryDialog = false,
-                        timerSeconds = 0,
-                        gameStartTime = null,
-                        gameEndTime = null,
-                        solutionMoves = emptyList(),
-                        selectedImageUri = null,
-                        imageTiles = emptyList(),
+                        isHintActive = false,
+                        solutionMoves = if (followsRec) solutionMoves.drop(1) else emptyList(),
                     )
                 }
             }
+        }
+
+        private fun performAction(action: suspend () -> Unit) {
+            updateState {
+                copy(
+                    isWon = false,
+                    showVictoryDialog = false,
+                    isHintActive = false,
+                    solutionMoves = emptyList(),
+                )
+            }
+            executeAction(action)
         }
 
         override fun onCleared() {
-            super.onCleared()
             feedbackManager.release()
-            viewModelScope.launch {
-                puzzleManager.clearAll()
-            }
+            viewModelScope.launch { puzzleManager.clearAll() }
         }
 
-        private fun requestSolution() {
-            executeAction {
-                val solution = puzzleManager.autoSolve().orEmpty()
-                if (solution.isNotEmpty()) {
-                    feedbackManager.playHintFeedback()
-                }
-                updateState {
-                    copy(
-                        isHintActive = true,
-                        solutionMoves = solution,
-                    )
-                }
-            }
-        }
-
-        private fun updateState(reducer: PuzzleUiState.() -> PuzzleUiState) {
-            _uiState.update(reducer)
-        }
-
-        private fun handleError(throwable: Throwable? = null) {
-            updateState {
-                copy(
-                    isLoading = throwable == null,
-                    error = throwable?.message ?: if (throwable == null) null else "Something went wrong",
-                )
-            }
-        }
+        private fun updateState(reducer: PuzzleUiState.() -> PuzzleUiState) = _uiState.update(reducer)
 
         private fun executeAction(action: suspend () -> Unit) {
             viewModelScope.launch {
-                updateState {
-                    copy(
-                        isLoading = true,
-                        error = null,
-                    )
+                updateState { copy(isLoading = true, error = null) }
+                runCatching { action() }.onFailure { t ->
+                    updateState {
+                        copy(
+                            isLoading = false,
+                            error = t.message ?: "Something went wrong",
+                        )
+                    }
                 }
-
-                runCatching {
-                    action()
-                }.onFailure(::handleError)
-
-                updateState {
-                    copy(isLoading = false)
-                }
+                updateState { copy(isLoading = false) }
             }
         }
 
-        fun playClickFeedback() {
-            feedbackManager.playClickFeedback()
-        }
+        fun playClickFeedback() = feedbackManager.playClickFeedback()
 
         private companion object {
             const val TIMER_UPDATE_INTERVAL_MILLIS = 1_000L

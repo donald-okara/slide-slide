@@ -50,7 +50,7 @@ class SolveUseCaseImpl
             val parent: Node? = null,
             val movePos: Int = -1,
         ) : Comparable<Node> {
-            val f: Double get() = g + HEURISTIC_WEIGHT * h
+            val f: Double get() = g + (HEURISTIC_WEIGHT * h)
 
             override fun compareTo(other: Node): Int = f.compareTo(other.f)
 
@@ -75,42 +75,50 @@ class SolveUseCaseImpl
             val openSet = PriorityQueue<Node>()
             val closedSet = mutableSetOf<IntArrayWrapper>()
 
-            val initialH = calculateHeuristic(initialTiles, size)
-            openSet.add(Node(initialTiles, initialBlankPos, 0, initialH))
+            openSet.add(Node(initialTiles, initialBlankPos, 0, calculateHeuristic(initialTiles, size)))
 
             var iterations = 0
             while (openSet.isNotEmpty() && iterations < MAX_ITERATIONS) {
                 iterations++
                 val current = openSet.poll() ?: break
-
                 if (current.h == 0) return reconstructPath(current, game.id)
 
                 val tilesWrapper = IntArrayWrapper(current.tiles)
-                if (tilesWrapper in closedSet) continue
-                closedSet.add(tilesWrapper)
-
-                val row = current.blankPos / size
-                val col = current.blankPos % size
-
-                val neighbors = mutableListOf<Int>()
-                if (row > 0) neighbors.add(current.blankPos - size)
-                if (row < size - 1) neighbors.add(current.blankPos + size)
-                if (col > 0) neighbors.add(current.blankPos - 1)
-                if (col < size - 1) neighbors.add(current.blankPos + 1)
-
-                for (nextPos in neighbors) {
-                    val nextTiles = current.tiles.copyOf()
-                    nextTiles[current.blankPos] = nextTiles[nextPos]
-                    nextTiles[nextPos] = blankValue
-
-                    if (IntArrayWrapper(nextTiles) in closedSet) continue
-
-                    val nextH = calculateHeuristic(nextTiles, size)
-                    openSet.add(Node(nextTiles, nextPos, current.g + 1, nextH, current, nextPos))
+                if (closedSet.add(tilesWrapper)) {
+                    expandNeighbors(current, size, blankValue, closedSet, openSet)
                 }
             }
 
             return null
+        }
+
+        private fun expandNeighbors(
+            current: Node,
+            size: Int,
+            blankValue: Int,
+            closedSet: Set<IntArrayWrapper>,
+            openSet: PriorityQueue<Node>,
+        ) {
+            val row = current.blankPos / size
+            val col = current.blankPos % size
+
+            val neighborOffsets = mutableListOf<Int>()
+            if (row > 0) neighborOffsets.add(-size)
+            if (row < size - 1) neighborOffsets.add(size)
+            if (col > 0) neighborOffsets.add(-1)
+            if (col < size - 1) neighborOffsets.add(1)
+
+            neighborOffsets.forEach { offset ->
+                val nextPos = current.blankPos + offset
+                val nextTiles = current.tiles.copyOf()
+                nextTiles[current.blankPos] = nextTiles[nextPos]
+                nextTiles[nextPos] = blankValue
+
+                if (IntArrayWrapper(nextTiles) !in closedSet) {
+                    val nextH = calculateHeuristic(nextTiles, size)
+                    openSet.add(Node(nextTiles, nextPos, current.g + 1, nextH, current, nextPos))
+                }
+            }
         }
 
         private fun calculateHeuristic(
@@ -122,11 +130,7 @@ class SolveUseCaseImpl
             for (i in tiles.indices) {
                 val value = tiles[i]
                 if (value == blankValue) continue
-                val targetRow = value / size
-                val targetCol = value % size
-                val currentRow = i / size
-                val currentCol = i % size
-                manhattanDist += abs(currentRow - targetRow) + abs(currentCol - targetCol)
+                manhattanDist += abs(i / size - value / size) + abs(i % size - value % size)
             }
             return manhattanDist + calculateLinearConflict(tiles, size)
         }
@@ -135,31 +139,83 @@ class SolveUseCaseImpl
             tiles: IntArray,
             size: Int,
         ): Int {
-            var conflict = 0
             val blankValue = size * size - 1
-            for (r in 0 until size) {
-                for (c1 in 0 until size) {
-                    val v1 = tiles[r * size + c1]
-                    if (v1 == blankValue || v1 / size != r) continue
-                    for (c2 in c1 + 1 until size) {
-                        val v2 = tiles[r * size + c2]
-                        if (v2 == blankValue || v2 / size != r) continue
-                        if (v1 > v2) conflict += 2
-                    }
-                }
-            }
-            for (c in 0 until size) {
-                for (r1 in 0 until size) {
-                    val v1 = tiles[r1 * size + c]
-                    if (v1 == blankValue || v1 % size != c) continue
-                    for (r2 in r1 + 1 until size) {
-                        val v2 = tiles[r2 * size + c]
-                        if (v2 == blankValue || v2 % size != c) continue
-                        if (v1 > v2) conflict += 2
-                    }
-                }
+            var conflict = 0
+            for (i in 0 until size) {
+                conflict += countRowConflicts(tiles, i, size, blankValue)
+                conflict += countColumnConflicts(tiles, i, size, blankValue)
             }
             return conflict
+        }
+
+        private fun countRowConflicts(
+            tiles: IntArray,
+            row: Int,
+            size: Int,
+            blankValue: Int,
+        ): Int {
+            var rowConflict = 0
+            for (c1 in 0 until size) {
+                val v1 = tiles[row * size + c1]
+                if (v1 != blankValue && v1 / size == row) {
+                    rowConflict += countRowConflictsForTile(tiles, row, size, blankValue, c1, v1)
+                }
+            }
+            return rowConflict
+        }
+
+        @Suppress("LongParameterList")
+        private fun countRowConflictsForTile(
+            tiles: IntArray,
+            row: Int,
+            size: Int,
+            blankValue: Int,
+            col: Int,
+            value: Int,
+        ): Int {
+            var count = 0
+            for (c2 in col + 1 until size) {
+                val v2 = tiles[row * size + c2]
+                if (v2 != blankValue && v2 / size == row && value > v2) {
+                    count += 2
+                }
+            }
+            return count
+        }
+
+        private fun countColumnConflicts(
+            tiles: IntArray,
+            col: Int,
+            size: Int,
+            blankValue: Int,
+        ): Int {
+            var colConflict = 0
+            for (r1 in 0 until size) {
+                val v1 = tiles[r1 * size + col]
+                if (v1 != blankValue && v1 % size == col) {
+                    colConflict += countColumnConflictsForTile(tiles, col, size, blankValue, r1, v1)
+                }
+            }
+            return colConflict
+        }
+
+        @Suppress("LongParameterList")
+        private fun countColumnConflictsForTile(
+            tiles: IntArray,
+            col: Int,
+            size: Int,
+            blankValue: Int,
+            row: Int,
+            value: Int,
+        ): Int {
+            var count = 0
+            for (r2 in row + 1 until size) {
+                val v2 = tiles[r2 * size + col]
+                if (v2 != blankValue && v2 % size == col && value > v2) {
+                    count += 2
+                }
+            }
+            return count
         }
 
         private fun reconstructPath(
@@ -170,16 +226,15 @@ class SolveUseCaseImpl
             var current: Node? = node
             while (current != null) {
                 val p = current.parent ?: break
-                // p.blankPos is where the blank was
-                // current.movePos is where the blank moved to (nextPos in the loop)
-                // This means the tile at current.movePos moved to p.blankPos
                 path.add(0, Move(gameId = gameId, fromPosition = current.movePos, toPosition = p.blankPos))
                 current = p
             }
             return path
         }
 
-        private class IntArrayWrapper(val array: IntArray) {
+        private class IntArrayWrapper(
+            val array: IntArray,
+        ) {
             override fun equals(other: Any?): Boolean {
                 if (this === other) return true
                 if (other !is IntArrayWrapper) return false

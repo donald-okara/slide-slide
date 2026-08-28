@@ -28,9 +28,11 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import ke.don.slideslide.domain.model.Difficulty
 import ke.don.slideslide.domain.model.Move
@@ -40,74 +42,115 @@ import ke.don.slideslide.ui.utils.SlidePreview
 import ke.don.slideslide.ui.utils.SlidePreviewContent
 import kotlin.math.abs
 
+private const val TILE_ANIMATION_DURATION = 300
+private val BOARD_PADDING = 8.dp
+
+@Immutable
+data class PuzzleBoardState(
+    val tiles: List<Tile>,
+    val difficulty: Difficulty,
+    val gameId: Long,
+    val imageTiles: List<Bitmap> = emptyList(),
+    val highlightedPosition: Int? = null,
+)
+
 @Composable
 fun PuzzleBoard(
-    tiles: List<Tile>,
-    difficulty: Difficulty,
-    gameId: Long,
+    state: PuzzleBoardState,
     onTileClick: (Move) -> Unit,
     modifier: Modifier = Modifier,
-    imageTiles: List<Bitmap> = emptyList(),
-    highlightedPosition: Int? = null,
 ) {
     BoxWithConstraints(
-        modifier = modifier
-            .aspectRatio(1f)
-            .fillMaxSize()
-            .clip(RoundedCornerShape(24.dp))
-            .background(SurfaceGrey)
-            .padding(8.dp)
+        modifier =
+            modifier
+                .aspectRatio(1f)
+                .fillMaxSize()
+                .clip(RoundedCornerShape(24.dp))
+                .background(SurfaceGrey)
+                .padding(BOARD_PADDING),
     ) {
-        val gridSize = difficulty.size
+        val gridSize = state.difficulty.size
         val tileSizeDp = maxWidth / gridSize
-        val blankTile = tiles.find { it.isBlank }
+        val blankTile = state.tiles.find { it.isBlank }
 
-        tiles.forEach { tile ->
-            val row = tile.currentPosition / gridSize
-            val col = tile.currentPosition % gridSize
-
-            val animatedOffsetX by animateDpAsState(
-                targetValue = tileSizeDp * col,
-                animationSpec = tween(durationMillis = 300),
-                label = "TileX_${tile.id}"
+        state.tiles.forEach { tile ->
+            AnimatedTile(
+                tile = tile,
+                gridSize = gridSize,
+                tileSizeDp = tileSizeDp,
+                blankTile = blankTile,
+                gameId = state.gameId,
+                onTileClick = onTileClick,
+                imageTiles = state.imageTiles,
+                highlightedPosition = state.highlightedPosition,
             )
-            val animatedOffsetY by animateDpAsState(
-                targetValue = tileSizeDp * row,
-                animationSpec = tween(durationMillis = 300),
-                label = "TileY_${tile.id}"
-            )
-
-            Box(
-                modifier = Modifier
-                    .size(tileSizeDp)
-                    .offset(x = animatedOffsetX, y = animatedOffsetY)
-            ) {
-                PuzzleTile(
-                    tile = tile,
-                    onClick = {
-                        if (blankTile != null && isAdjacent(tile.currentPosition, blankTile.currentPosition, gridSize)) {
-                            onTileClick(
-                                Move(
-                                    gameId = gameId,
-                                    fromPosition = tile.currentPosition,
-                                    toPosition = blankTile.currentPosition,
-                                ),
-                            )
-                        }
-                    },
-                    bitmap = if (imageTiles.isNotEmpty() && !tile.isBlank) {
-                        imageTiles.getOrNull(tile.value)
-                    } else {
-                        null
-                    },
-                    isHighlighted = highlightedPosition == tile.currentPosition
-                )
-            }
         }
     }
 }
 
-private fun isAdjacent(pos1: Int, pos2: Int, size: Int): Boolean {
+@Suppress("LongParameterList")
+@Composable
+private fun AnimatedTile(
+    tile: Tile,
+    gridSize: Int,
+    tileSizeDp: Dp,
+    blankTile: Tile?,
+    gameId: Long,
+    onTileClick: (Move) -> Unit,
+    imageTiles: List<Bitmap>,
+    highlightedPosition: Int?,
+) {
+    val row = tile.currentPosition / gridSize
+    val col = tile.currentPosition % gridSize
+
+    val animatedOffsetX by animateDpAsState(
+        targetValue = tileSizeDp * col,
+        animationSpec = tween(durationMillis = TILE_ANIMATION_DURATION),
+        label = "TileX_${tile.id}",
+    )
+    val animatedOffsetY by animateDpAsState(
+        targetValue = tileSizeDp * row,
+        animationSpec = tween(durationMillis = TILE_ANIMATION_DURATION),
+        label = "TileY_${tile.id}",
+    )
+
+    Box(
+        modifier =
+            Modifier
+                .size(tileSizeDp)
+                .offset(x = animatedOffsetX, y = animatedOffsetY),
+    ) {
+        PuzzleTile(
+            tile = tile,
+            onClick = {
+                if ((blankTile != null) &&
+                    isAdjacent(tile.currentPosition, blankTile.currentPosition, gridSize)
+                ) {
+                    onTileClick(
+                        Move(
+                            gameId = gameId,
+                            fromPosition = tile.currentPosition,
+                            toPosition = blankTile.currentPosition,
+                        ),
+                    )
+                }
+            },
+            bitmap =
+                if (imageTiles.isNotEmpty() && !tile.isBlank) {
+                    imageTiles.getOrNull(tile.value)
+                } else {
+                    null
+                },
+            isHighlighted = highlightedPosition == tile.currentPosition,
+        )
+    }
+}
+
+private fun isAdjacent(
+    pos1: Int,
+    pos2: Int,
+    size: Int,
+): Boolean {
     val row1 = pos1 / size
     val col1 = pos1 % size
     val row2 = pos2 / size
@@ -115,6 +158,7 @@ private fun isAdjacent(pos1: Int, pos2: Int, size: Int): Boolean {
     return (abs(row1 - row2) == 1 && col1 == col2) || (abs(col1 - col2) == 1 && row1 == row2)
 }
 
+@Suppress("UnusedPrivateMember")
 @SlidePreview
 @Composable
 private fun PuzzleBoardPreview() {
@@ -131,9 +175,12 @@ private fun PuzzleBoardPreview() {
         }
     SlidePreviewContent {
         PuzzleBoard(
-            tiles = tiles,
-            difficulty = difficulty,
-            gameId = 0L,
+            state =
+                PuzzleBoardState(
+                    tiles = tiles,
+                    difficulty = difficulty,
+                    gameId = 0L,
+                ),
             onTileClick = {},
         )
     }
