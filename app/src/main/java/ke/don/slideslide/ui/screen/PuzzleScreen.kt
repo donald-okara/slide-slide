@@ -29,6 +29,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import ke.don.slideslide.domain.model.Difficulty
 import ke.don.slideslide.ui.component.GameActions
 import ke.don.slideslide.ui.component.GameControls
@@ -42,7 +43,6 @@ import ke.don.slideslide.ui.state.PuzzleIntent
 import ke.don.slideslide.ui.state.PuzzleUiState
 import ke.don.slideslide.ui.utils.SlidePreviewContent
 import ke.don.slideslide.ui.utils.SlideScreenPreview
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import ke.don.slideslide.ui.viewmodel.PuzzleViewModel
 
 @RequiresApi(Build.VERSION_CODES.O)

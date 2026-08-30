@@ -39,11 +39,9 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import ke.don.slideslide.ui.theme.SurfaceGrey
 import ke.don.slideslide.ui.utils.SlidePreview
 import ke.don.slideslide.ui.utils.SlidePreviewContent
 
@@ -100,8 +98,8 @@ private fun ControlPill(
         shape = CircleShape,
         colors =
             ButtonDefaults.buttonColors(
-                containerColor = SurfaceGrey,
-                contentColor = Color.White,
+                containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
             ),
         elevation = ButtonDefaults.buttonElevation(defaultElevation = 0.dp),
     ) {

@@ -20,14 +20,12 @@ import androidx.navigation3.runtime.NavBackStack
 import androidx.navigation3.runtime.rememberNavBackStack
 
 class PuzzleNavState(
-    val backStack: NavBackStack<PuzzleRoute>
+    val backStack: NavBackStack<PuzzleRoute>,
 )
 
 @Suppress("UNCHECKED_CAST")
 @Composable
-fun rememberPuzzleNavState(
-    startDestination: PuzzleRoute = PuzzleRoute.Setup
-): PuzzleNavState {
+fun rememberPuzzleNavState(startDestination: PuzzleRoute = PuzzleRoute.Setup): PuzzleNavState {
     val backStack = rememberNavBackStack(startDestination) as NavBackStack<PuzzleRoute>
     return PuzzleNavState(backStack)
 }

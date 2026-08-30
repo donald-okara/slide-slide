@@ -18,6 +18,7 @@ package ke.don.slideslide.ui.theme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.graphics.Color
 
 private val DarkColorScheme =
     darkColorScheme(
@@ -26,10 +27,16 @@ private val DarkColorScheme =
         primaryContainer = AccentPurple,
         onPrimaryContainer = OnAccentPurple,
         secondary = TextGrey,
+        onSecondary = Background,
         surface = SurfaceGrey,
         background = Background,
         onBackground = OffWhite,
         onSurface = OffWhite,
+        surfaceVariant = SurfaceGrey,
+        onSurfaceVariant = OffWhite,
+        outline = TileBorder,
+        outlineVariant = TileBorder.copy(alpha = 0.5f),
+        scrim = Color.Black,
     )
 
 @Composable

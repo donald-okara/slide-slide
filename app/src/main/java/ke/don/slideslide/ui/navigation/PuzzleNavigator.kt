@@ -22,7 +22,7 @@ import ke.don.slideslide.ui.state.PuzzleIntent
 class PuzzleNavigator(
     val state: PuzzleNavState,
     private val onIntent: (PuzzleIntent) -> Unit,
-    private val finishActivity: () -> Unit
+    private val finishActivity: () -> Unit,
 ) {
     fun navigateToGame() {
         state.backStack.add(PuzzleRoute.Game)
@@ -42,9 +42,8 @@ class PuzzleNavigator(
 fun rememberPuzzleNavigator(
     state: PuzzleNavState = rememberPuzzleNavState(),
     onIntent: (PuzzleIntent) -> Unit,
-    finishActivity: () -> Unit
-): PuzzleNavigator {
-    return remember(state, onIntent, finishActivity) {
+    finishActivity: () -> Unit,
+): PuzzleNavigator =
+    remember(state, onIntent, finishActivity) {
         PuzzleNavigator(state, onIntent, finishActivity)
     }
-}

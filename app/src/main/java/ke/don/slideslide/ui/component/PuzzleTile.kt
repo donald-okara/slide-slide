@@ -38,8 +38,6 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import ke.don.slideslide.domain.model.Tile
-import ke.don.slideslide.ui.theme.OnAccentPurple
-import ke.don.slideslide.ui.theme.TileBorder
 import ke.don.slideslide.ui.utils.SlidePreview
 import ke.don.slideslide.ui.utils.SlidePreviewContent
 
@@ -69,6 +67,7 @@ fun PuzzleTile(
 
 @Composable
 private fun BlankTilePlaceholder(modifier: Modifier = Modifier) {
+    val borderColor = MaterialTheme.colorScheme.outline
     Box(
         modifier =
             modifier
@@ -81,7 +80,7 @@ private fun BlankTilePlaceholder(modifier: Modifier = Modifier) {
                             pathEffect = PathEffect.dashPathEffect(floatArrayOf(DASH_LENGTH, DASH_LENGTH), 0f),
                         )
                     drawRoundRect(
-                        color = TileBorder,
+                        color = borderColor,
                         style = stroke,
                         cornerRadius =
                             androidx.compose.ui.geometry
@@ -150,7 +149,7 @@ private fun TileNumber(value: Int) {
         text = value.toString(),
         style = MaterialTheme.typography.headlineMedium,
         fontWeight = FontWeight.Bold,
-        color = OnAccentPurple,
+        color = MaterialTheme.colorScheme.onPrimary,
     )
 }
 

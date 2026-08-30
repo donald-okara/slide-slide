@@ -36,16 +36,12 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
-import ke.don.slideslide.ui.theme.DialogBackground
-import ke.don.slideslide.ui.theme.SurfaceGrey
-import ke.don.slideslide.ui.theme.TileBorder
 import ke.don.slideslide.ui.utils.SlidePreview
 import ke.don.slideslide.ui.utils.SlidePreviewContent
 import ke.don.slideslide.ui.utils.formatSeconds
@@ -71,7 +67,7 @@ fun VictoryDialog(
                     .fillMaxWidth(DIALOG_WIDTH_FRACTION)
                     .padding(16.dp),
             shape = RoundedCornerShape(32.dp),
-            color = DialogBackground,
+            color = MaterialTheme.colorScheme.surface,
             tonalElevation = 8.dp,
         ) {
             VictoryDialogContent(
@@ -123,7 +119,7 @@ private fun VictoryHeader() {
         style =
             MaterialTheme.typography.headlineSmall.copy(
                 fontWeight = FontWeight.Bold,
-                color = Color.White,
+                color = MaterialTheme.colorScheme.onSurface,
             ),
         textAlign = TextAlign.Center,
     )
@@ -155,7 +151,7 @@ private fun VictoryStats(
                     .padding(horizontal = 32.dp)
                     .width(1.dp)
                     .height(48.dp)
-                    .background(SurfaceGrey),
+                    .background(MaterialTheme.colorScheme.outlineVariant),
         )
 
         StatSummaryItem(label = "TIME", value = formatSeconds(timerSeconds))
@@ -177,7 +173,7 @@ private fun VictoryActions(
         colors =
             ButtonDefaults.buttonColors(
                 containerColor = MaterialTheme.colorScheme.primary,
-                contentColor = Color.Black,
+                contentColor = MaterialTheme.colorScheme.onPrimary,
             ),
     ) {
         Text(
@@ -195,10 +191,10 @@ private fun VictoryActions(
                 .fillMaxWidth()
                 .height(56.dp),
         shape = RoundedCornerShape(28.dp),
-        border = BorderStroke(1.dp, TileBorder),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
         colors =
             ButtonDefaults.outlinedButtonColors(
-                contentColor = Color.White,
+                contentColor = MaterialTheme.colorScheme.onSurface,
             ),
     ) {
         Text(
@@ -219,7 +215,7 @@ private fun StatSummaryItem(
             style =
                 MaterialTheme.typography.headlineMedium.copy(
                     fontWeight = FontWeight.Bold,
-                    color = Color.White,
+                    color = MaterialTheme.colorScheme.onSurface,
                 ),
         )
         Text(

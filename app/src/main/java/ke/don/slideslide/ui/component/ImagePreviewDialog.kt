@@ -28,11 +28,11 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
@@ -52,7 +52,7 @@ fun ImagePreviewDialog(
             modifier =
                 Modifier
                     .fillMaxSize()
-                    .background(Color.Black.copy(alpha = 0.9f))
+                    .background(MaterialTheme.colorScheme.scrim.copy(alpha = 0.9f))
                     .padding(24.dp),
             contentAlignment = Alignment.Center,
         ) {
@@ -72,8 +72,8 @@ fun ImagePreviewDialog(
                     Modifier
                         .align(Alignment.TopEnd)
                         .padding(16.dp)
-                        .background(Color.Black.copy(alpha = 0.5f), CircleShape),
-                colors = IconButtonDefaults.iconButtonColors(contentColor = Color.White),
+                        .background(MaterialTheme.colorScheme.scrim.copy(alpha = 0.5f), CircleShape),
+                colors = IconButtonDefaults.iconButtonColors(contentColor = MaterialTheme.colorScheme.onSurface),
             ) {
                 Icon(Icons.Default.Close, contentDescription = "Close")
             }

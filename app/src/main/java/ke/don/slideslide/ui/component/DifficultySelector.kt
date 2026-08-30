@@ -34,7 +34,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import ke.don.slideslide.domain.model.Difficulty
-import ke.don.slideslide.ui.theme.TileBorder
 import ke.don.slideslide.ui.utils.SlidePreview
 import ke.don.slideslide.ui.utils.SlidePreviewContent
 
@@ -50,9 +49,12 @@ fun DifficultySelector(
     ) {
         Difficulty.entries.forEach { difficulty ->
             val isSelected = difficulty == selectedDifficulty
-            val contentColor = if (isSelected) Color.Black else Color.White
-            val containerColor = if (isSelected) MaterialTheme.colorScheme.primary else Color.Transparent
-            val borderColor = if (isSelected) Color.Transparent else TileBorder
+            val contentColor =
+                if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface
+            val containerColor =
+                if (isSelected) MaterialTheme.colorScheme.primary else Color.Transparent
+            val borderColor =
+                if (isSelected) Color.Transparent else MaterialTheme.colorScheme.outline
 
             OutlinedButton(
                 onClick = { onDifficultySelected(difficulty) },

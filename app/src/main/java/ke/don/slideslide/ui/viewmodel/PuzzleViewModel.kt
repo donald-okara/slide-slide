@@ -20,6 +20,7 @@ import androidx.annotation.RequiresApi
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import ke.don.slideslide.di.ApplicationScope
 import ke.don.slideslide.domain.image.BitmapSlicer
 import ke.don.slideslide.domain.manager.FeedbackManager
 import ke.don.slideslide.domain.manager.PuzzleManager
@@ -28,7 +29,6 @@ import ke.don.slideslide.domain.model.Move
 import ke.don.slideslide.ui.state.PuzzleIntent
 import ke.don.slideslide.ui.state.PuzzleUiState
 import ke.don.slideslide.ui.utils.calculateElapsedSeconds
-import ke.don.slideslide.di.ApplicationScope
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -51,7 +51,6 @@ class PuzzleViewModel
         private val feedbackManager: FeedbackManager,
         private val clock: Clock,
         private val bitmapSlicer: BitmapSlicer,
-        @param:ApplicationScope private val applicationScope: CoroutineScope,
     ) : ViewModel() {
         private val _uiState = MutableStateFlow(PuzzleUiState())
         private var autoSolveJob: Job? = null
@@ -300,7 +299,7 @@ class PuzzleViewModel
         override fun onCleared() {
             super.onCleared()
             feedbackManager.release()
-            applicationScope.launch {
+            viewModelScope.launch {
                 puzzleManager.clearAll()
             }
         }

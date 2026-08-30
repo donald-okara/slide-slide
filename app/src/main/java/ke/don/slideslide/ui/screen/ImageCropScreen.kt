@@ -48,7 +48,6 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.ClipOp
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.drawscope.clipPath
@@ -94,7 +93,7 @@ fun ImageCropScreen(viewModel: PuzzleViewModel) {
         modifier =
             Modifier
                 .fillMaxSize()
-                .background(Color.Black),
+                .background(MaterialTheme.colorScheme.scrim),
     ) {
         var scale by remember { mutableFloatStateOf(1f) }
         var offset by remember { mutableStateOf(Offset.Zero) }
@@ -167,17 +166,19 @@ private fun CropImageLayer(
 
 @Composable
 private fun CropOverlay(viewportRect: Rect) {
+    val scrimColor = MaterialTheme.colorScheme.scrim
+    val outlineColor = MaterialTheme.colorScheme.onSurface
     Canvas(modifier = Modifier.fillMaxSize()) {
         val path =
             Path().apply {
                 addRect(viewportRect)
             }
         clipPath(path, clipOp = ClipOp.Difference) {
-            drawRect(Color.Black.copy(alpha = OVERLAY_ALPHA))
+            drawRect(scrimColor.copy(alpha = OVERLAY_ALPHA))
         }
         // Viewport border
         drawRect(
-            color = Color.White,
+            color = outlineColor,
             topLeft = viewportRect.topLeft,
             size = viewportRect.size,
             style =
@@ -200,15 +201,27 @@ private fun CropControls(
         verticalAlignment = Alignment.CenterVertically,
     ) {
         IconButton(onClick = onCancel) {
-            Icon(Icons.Default.Close, contentDescription = "Cancel", tint = Color.White)
+            Icon(
+                Icons.Default.Close,
+                contentDescription = "Cancel",
+                tint = MaterialTheme.colorScheme.onSurface,
+            )
         }
 
         Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
-            Text("Crop Image", color = Color.White, style = MaterialTheme.typography.titleMedium)
+            Text(
+                "Crop Image",
+                color = MaterialTheme.colorScheme.onSurface,
+                style = MaterialTheme.typography.titleMedium,
+            )
         }
 
         IconButton(onClick = onConfirm) {
-            Icon(Icons.Default.Check, contentDescription = "Confirm", tint = MaterialTheme.colorScheme.primary)
+            Icon(
+                Icons.Default.Check,
+                contentDescription = "Confirm",
+                tint = MaterialTheme.colorScheme.primary,
+            )
         }
     }
 }

@@ -52,7 +52,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -65,7 +64,6 @@ import ke.don.slideslide.ui.component.DifficultySelector
 import ke.don.slideslide.ui.component.SettingsBar
 import ke.don.slideslide.ui.state.PuzzleIntent
 import ke.don.slideslide.ui.state.PuzzleUiState
-import ke.don.slideslide.ui.theme.DisabledButton
 import ke.don.slideslide.ui.utils.SlidePreviewContent
 import ke.don.slideslide.ui.utils.SlideScreenPreview
 import ke.don.slideslide.ui.viewmodel.PuzzleViewModel
@@ -181,7 +179,7 @@ private fun SetupHeader() {
                 fontWeight = FontWeight.Bold,
                 letterSpacing = (-0.5).sp,
             ),
-        color = Color.White,
+        color = MaterialTheme.colorScheme.onBackground,
         modifier = Modifier.padding(top = 32.dp),
     )
 
@@ -279,8 +277,8 @@ private fun StartGameButton(
         shape = RoundedCornerShape(32.dp),
         colors =
             ButtonDefaults.buttonColors(
-                containerColor = if (isEnabled) MaterialTheme.colorScheme.primary else DisabledButton,
-                contentColor = if (isEnabled) Color.Black else MaterialTheme.colorScheme.secondary,
+                containerColor = if (isEnabled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
+                contentColor = if (isEnabled) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
             ),
         enabled = isEnabled,
     ) {

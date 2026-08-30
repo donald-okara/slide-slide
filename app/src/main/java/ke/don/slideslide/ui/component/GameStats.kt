@@ -35,7 +35,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
@@ -106,7 +105,7 @@ private fun StatItem(
                 MaterialTheme.typography.headlineSmall.copy(
                     fontWeight = FontWeight.Bold,
                 ),
-            color = Color.White,
+            color = MaterialTheme.colorScheme.onBackground,
         )
     }
 }

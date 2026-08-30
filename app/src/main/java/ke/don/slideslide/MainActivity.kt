@@ -31,6 +31,7 @@ import ke.don.slideslide.ui.navigation.PuzzleRoute
 import ke.don.slideslide.ui.navigation.rememberPuzzleNavigator
 import ke.don.slideslide.ui.screen.PuzzleScreen
 import ke.don.slideslide.ui.screen.SetupScreen
+import ke.don.slideslide.ui.theme.SlideSlideTheme
 import ke.don.slideslide.ui.viewmodel.PuzzleViewModel
 
 @AndroidEntryPoint
@@ -41,27 +42,32 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             val viewModel: PuzzleViewModel = hiltViewModel()
-            val navigator = rememberPuzzleNavigator(
-                onIntent = viewModel::onIntent,
-                finishActivity = { finish() }
-            )
+            val navigator =
+                rememberPuzzleNavigator(
+                    onIntent = viewModel::onIntent,
+                    finishActivity = { finish() },
+                )
 
-            NavDisplay(
-                backStack = navigator.state.backStack,
-                onBack = { navigator.navigateBack() },
-                entryDecorators = listOf(
-                    rememberSaveableStateHolderNavEntryDecorator(),
-                    rememberViewModelStoreNavEntryDecorator()
-                ),
-                entryProvider = entryProvider {
-                    entry<PuzzleRoute.Setup> {
-                        SetupScreen(viewModel) { navigator.navigateToGame() }
-                    }
-                    entry<PuzzleRoute.Game> {
-                        PuzzleScreen(viewModel) { navigator.navigateBack() }
-                    }
+            SlideSlideTheme{
+                    NavDisplay(
+                        backStack = navigator.state.backStack,
+                        onBack = { navigator.navigateBack() },
+                        entryDecorators =
+                            listOf(
+                                rememberSaveableStateHolderNavEntryDecorator(),
+                                rememberViewModelStoreNavEntryDecorator(),
+                            ),
+                        entryProvider =
+                            entryProvider {
+                                entry<PuzzleRoute.Setup> {
+                                    SetupScreen(viewModel) { navigator.navigateToGame() }
+                                }
+                                entry<PuzzleRoute.Game> {
+                                    PuzzleScreen(viewModel) { navigator.navigateBack() }
+                                }
+                            },
+                    )
                 }
-            )
         }
     }
 }
