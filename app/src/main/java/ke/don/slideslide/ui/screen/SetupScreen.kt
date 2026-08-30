@@ -48,7 +48,6 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -60,6 +59,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import ke.don.slideslide.domain.model.Difficulty
 import ke.don.slideslide.ui.component.DifficultySelector
 import ke.don.slideslide.ui.component.SettingsBar
@@ -76,7 +76,7 @@ fun SetupScreen(
     viewModel: PuzzleViewModel,
     onStartGame: () -> Unit,
 ) {
-    val uiState by viewModel.uiState.collectAsState()
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
 
     val launcher =
@@ -266,7 +266,7 @@ private fun StartGameButton(
     onIntent: (PuzzleIntent) -> Unit,
     onStartGame: () -> Unit,
 ) {
-    val isEnabled = uiState.selectedImageUri != null
+    val isEnabled = uiState.selectedImageUri != null || uiState.originalImage != null
     Button(
         onClick = {
             onIntent(PuzzleIntent.Shuffle)

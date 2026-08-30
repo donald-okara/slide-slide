@@ -25,7 +25,6 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -43,6 +42,7 @@ import ke.don.slideslide.ui.state.PuzzleIntent
 import ke.don.slideslide.ui.state.PuzzleUiState
 import ke.don.slideslide.ui.utils.SlidePreviewContent
 import ke.don.slideslide.ui.utils.SlideScreenPreview
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import ke.don.slideslide.ui.viewmodel.PuzzleViewModel
 
 @RequiresApi(Build.VERSION_CODES.O)
@@ -51,11 +51,10 @@ fun PuzzleScreen(
     viewModel: PuzzleViewModel,
     onNavigateBack: () -> Unit,
 ) {
-    val uiState by viewModel.uiState.collectAsState()
-
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     PuzzleContent(
         uiState = uiState,
-        onIntent = { viewModel.onIntent(it) },
+        onIntent = viewModel::onIntent,
         onBackClick = onNavigateBack,
     )
 }

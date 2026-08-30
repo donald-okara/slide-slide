@@ -28,6 +28,8 @@ import ke.don.slideslide.domain.model.Move
 import ke.don.slideslide.ui.state.PuzzleIntent
 import ke.don.slideslide.ui.state.PuzzleUiState
 import ke.don.slideslide.ui.utils.calculateElapsedSeconds
+import ke.don.slideslide.di.ApplicationScope
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -49,6 +51,7 @@ class PuzzleViewModel
         private val feedbackManager: FeedbackManager,
         private val clock: Clock,
         private val bitmapSlicer: BitmapSlicer,
+        @param:ApplicationScope private val applicationScope: CoroutineScope,
     ) : ViewModel() {
         private val _uiState = MutableStateFlow(PuzzleUiState())
         private var autoSolveJob: Job? = null
@@ -112,18 +115,7 @@ class PuzzleViewModel
                     executeAction {
                         puzzleManager.clearAll()
                         updateState {
-                            copy(
-                                tiles = emptyList(),
-                                moveCount = 0,
-                                isWon = false,
-                                showVictoryDialog = false,
-                                timerSeconds = 0,
-                                gameStartTime = null,
-                                gameEndTime = null,
-                                solutionMoves = emptyList(),
-                                selectedImageUri = null,
-                                imageTiles = emptyList(),
-                            )
+                            PuzzleUiState()
                         }
                     }
             }
@@ -161,8 +153,10 @@ class PuzzleViewModel
                         copy(isCropping = false, selectedImageUri = null)
                     }
                 is PuzzleIntent.ClearImage ->
-                    updateState {
-                        copy(selectedImageUri = null, originalImage = null)
+                    executeAction {
+                        updateState {
+                            copy(selectedImageUri = null, originalImage = null, imageTiles = emptyList())
+                        }
                     }
             }
 
@@ -219,7 +213,7 @@ class PuzzleViewModel
             viewModelScope.launch {
                 while (isActive) {
                     updateState {
-                        if (gameStartTime != null && !isWon) {
+                        if ((gameStartTime != null) && !isWon) {
                             copy(timerSeconds = calculateElapsedSeconds(gameStartTime, gameEndTime, clock))
                         } else {
                             this
@@ -304,8 +298,11 @@ class PuzzleViewModel
         }
 
         override fun onCleared() {
+            super.onCleared()
             feedbackManager.release()
-            viewModelScope.launch { puzzleManager.clearAll() }
+            applicationScope.launch {
+                puzzleManager.clearAll()
+            }
         }
 
         private fun updateState(reducer: PuzzleUiState.() -> PuzzleUiState) = _uiState.update(reducer)

@@ -37,7 +37,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -58,6 +57,7 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
 import androidx.core.graphics.scale
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import ke.don.slideslide.ui.state.PuzzleIntent
 import ke.don.slideslide.ui.viewmodel.PuzzleViewModel
 import kotlin.math.max
@@ -83,7 +83,7 @@ private data class CropParams(
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun ImageCropScreen(viewModel: PuzzleViewModel) {
-    val uiState by viewModel.uiState.collectAsState()
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val bitmap = uiState.croppingImage ?: return
 
     BackHandler {

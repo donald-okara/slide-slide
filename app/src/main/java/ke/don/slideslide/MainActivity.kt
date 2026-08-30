@@ -21,30 +21,17 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.annotation.RequiresApi
-import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.mutableStateListOf
-import androidx.compose.runtime.remember
 import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.LifecycleEventObserver
-import androidx.lifecycle.compose.LocalLifecycleOwner
-import androidx.navigation3.runtime.NavEntry
-import androidx.navigation3.runtime.NavKey
+import androidx.lifecycle.viewmodel.navigation3.rememberViewModelStoreNavEntryDecorator
+import androidx.navigation3.runtime.entryProvider
+import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import androidx.navigation3.ui.NavDisplay
 import dagger.hilt.android.AndroidEntryPoint
+import ke.don.slideslide.ui.navigation.PuzzleRoute
+import ke.don.slideslide.ui.navigation.rememberPuzzleNavigator
 import ke.don.slideslide.ui.screen.PuzzleScreen
 import ke.don.slideslide.ui.screen.SetupScreen
-import ke.don.slideslide.ui.state.PuzzleIntent
-import ke.don.slideslide.ui.theme.SlideSlideTheme
 import ke.don.slideslide.ui.viewmodel.PuzzleViewModel
-import kotlinx.serialization.Serializable
-
-@Serializable
-sealed interface PuzzleRoute : NavKey {
-    @Serializable data object Setup : PuzzleRoute
-
-    @Serializable data object Game : PuzzleRoute
-}
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
@@ -53,53 +40,28 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
-            SlideSlideTheme {
-                val backStack = remember { mutableStateListOf<NavKey>(PuzzleRoute.Setup) }
-                val viewModel: PuzzleViewModel = hiltViewModel()
-                val lifecycleOwner = LocalLifecycleOwner.current
+            val viewModel: PuzzleViewModel = hiltViewModel()
+            val navigator = rememberPuzzleNavigator(
+                onIntent = viewModel::onIntent,
+                finishActivity = { finish() }
+            )
 
-                DisposableEffect(lifecycleOwner) {
-                    val observer =
-                        LifecycleEventObserver { _, event ->
-                            if (event == Lifecycle.Event.ON_STOP) {
-                                viewModel.onIntent(PuzzleIntent.ClearAll)
-                            }
-                        }
-                    lifecycleOwner.lifecycle.addObserver(observer)
-                    onDispose {
-                        lifecycleOwner.lifecycle.removeObserver(observer)
+            NavDisplay(
+                backStack = navigator.state.backStack,
+                onBack = { navigator.navigateBack() },
+                entryDecorators = listOf(
+                    rememberSaveableStateHolderNavEntryDecorator(),
+                    rememberViewModelStoreNavEntryDecorator()
+                ),
+                entryProvider = entryProvider {
+                    entry<PuzzleRoute.Setup> {
+                        SetupScreen(viewModel) { navigator.navigateToGame() }
+                    }
+                    entry<PuzzleRoute.Game> {
+                        PuzzleScreen(viewModel) { navigator.navigateBack() }
                     }
                 }
-
-                NavDisplay(
-                    backStack = backStack,
-                    onBack = {
-                        val removed = backStack.removeLastOrNull()
-                        if (removed == PuzzleRoute.Game) {
-                            viewModel.onIntent(PuzzleIntent.ClearAll)
-                        }
-                    },
-                    entryProvider = { key ->
-                        when (key) {
-                            PuzzleRoute.Setup ->
-                                NavEntry(key) {
-                                    SetupScreen(viewModel) { backStack.add(PuzzleRoute.Game) }
-                                }
-                            PuzzleRoute.Game ->
-                                NavEntry(key) {
-                                    PuzzleScreen(
-                                        viewModel = viewModel,
-                                        onNavigateBack = {
-                                            backStack.removeLastOrNull()
-                                            viewModel.onIntent(PuzzleIntent.ClearAll)
-                                        },
-                                    )
-                                }
-                            else -> error("Unknown route: $key")
-                        }
-                    },
-                )
-            }
+            )
         }
     }
 }
