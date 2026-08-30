@@ -247,10 +247,11 @@ class PuzzleViewModelTest {
         runTest(testDispatcher) {
             val viewModel = createViewModel(FakePuzzleManager(), TestClock(0L))
             try {
-                runCurrent()
                 viewModel.onIntent(PuzzleIntent.SelectImage(Uri.parse("content://images/1")))
+                runCurrent()
 
                 viewModel.onIntent(PuzzleIntent.ClearImage)
+                runCurrent()
 
                 assertEquals(null, viewModel.uiState.value.selectedImageUri)
             } finally {

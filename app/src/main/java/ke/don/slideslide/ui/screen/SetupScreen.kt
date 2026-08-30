@@ -277,8 +277,18 @@ private fun StartGameButton(
         shape = RoundedCornerShape(32.dp),
         colors =
             ButtonDefaults.buttonColors(
-                containerColor = if (isEnabled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
-                contentColor = if (isEnabled) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
+                containerColor =
+                    if (isEnabled) {
+                        MaterialTheme.colorScheme.primary
+                    } else {
+                        MaterialTheme.colorScheme.surfaceVariant
+                    },
+                contentColor =
+                    if (isEnabled) {
+                        MaterialTheme.colorScheme.onPrimary
+                    } else {
+                        MaterialTheme.colorScheme.onSurfaceVariant
+                    },
             ),
         enabled = isEnabled,
     ) {

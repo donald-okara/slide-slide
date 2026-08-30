@@ -20,7 +20,6 @@ import androidx.annotation.RequiresApi
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
-import ke.don.slideslide.di.ApplicationScope
 import ke.don.slideslide.domain.image.BitmapSlicer
 import ke.don.slideslide.domain.manager.FeedbackManager
 import ke.don.slideslide.domain.manager.PuzzleManager
@@ -29,7 +28,6 @@ import ke.don.slideslide.domain.model.Move
 import ke.don.slideslide.ui.state.PuzzleIntent
 import ke.don.slideslide.ui.state.PuzzleUiState
 import ke.don.slideslide.ui.utils.calculateElapsedSeconds
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow

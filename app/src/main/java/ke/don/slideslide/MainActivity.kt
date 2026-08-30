@@ -48,26 +48,26 @@ class MainActivity : ComponentActivity() {
                     finishActivity = { finish() },
                 )
 
-            SlideSlideTheme{
-                    NavDisplay(
-                        backStack = navigator.state.backStack,
-                        onBack = { navigator.navigateBack() },
-                        entryDecorators =
-                            listOf(
-                                rememberSaveableStateHolderNavEntryDecorator(),
-                                rememberViewModelStoreNavEntryDecorator(),
-                            ),
-                        entryProvider =
-                            entryProvider {
-                                entry<PuzzleRoute.Setup> {
-                                    SetupScreen(viewModel) { navigator.navigateToGame() }
-                                }
-                                entry<PuzzleRoute.Game> {
-                                    PuzzleScreen(viewModel) { navigator.navigateBack() }
-                                }
-                            },
-                    )
-                }
+            SlideSlideTheme {
+                NavDisplay(
+                    backStack = navigator.state.backStack,
+                    onBack = { navigator.navigateBack() },
+                    entryDecorators =
+                        listOf(
+                            rememberSaveableStateHolderNavEntryDecorator(),
+                            rememberViewModelStoreNavEntryDecorator(),
+                        ),
+                    entryProvider =
+                        entryProvider {
+                            entry<PuzzleRoute.Setup> {
+                                SetupScreen(viewModel) { navigator.navigateToGame() }
+                            }
+                            entry<PuzzleRoute.Game> {
+                                PuzzleScreen(viewModel) { navigator.navigateBack() }
+                            }
+                        },
+                )
+            }
         }
     }
 }
