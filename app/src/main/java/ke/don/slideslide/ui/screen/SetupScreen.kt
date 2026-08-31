@@ -36,7 +36,9 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AddPhotoAlternate
 import androidx.compose.material.icons.filled.PlayArrow
@@ -44,7 +46,6 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -61,7 +62,6 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import ke.don.slideslide.domain.model.Difficulty
 import ke.don.slideslide.ui.component.DifficultySelector
-import ke.don.slideslide.ui.component.SettingsBar
 import ke.don.slideslide.ui.state.PuzzleIntent
 import ke.don.slideslide.ui.state.PuzzleUiState
 import ke.don.slideslide.ui.utils.SlidePreviewContent
@@ -72,6 +72,7 @@ import ke.don.slideslide.ui.viewmodel.PuzzleViewModel
 @Composable
 fun SetupScreen(
     viewModel: PuzzleViewModel,
+    modifier: Modifier = Modifier,
     onStartGame: () -> Unit,
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -108,6 +109,7 @@ fun SetupScreen(
                 onStartGame = onStartGame,
                 onInteraction = { viewModel.playClickFeedback() },
             ),
+        modifier = modifier,
     )
 
     if (uiState.isCropping) {
@@ -121,74 +123,39 @@ fun SetupContent(
     actions: SetupActions,
     modifier: Modifier = Modifier,
 ) {
-    Scaffold(
-        modifier = modifier,
-        containerColor = MaterialTheme.colorScheme.background,
-    ) { innerPadding ->
-        Column(
-            modifier =
-                Modifier
-                    .fillMaxSize()
-                    .padding(innerPadding)
-                    .padding(24.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
-            SettingsBar(
-                isSoundEnabled = uiState.isSoundEnabled,
-                isVibrationEnabled = uiState.isVibrationEnabled,
-                onToggleSound = { actions.onIntent(PuzzleIntent.ToggleSound) },
-                onToggleVibration = { actions.onIntent(PuzzleIntent.ToggleVibration) },
-            )
+    Column(
+        modifier =
+            modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+                .padding(24.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Spacer(modifier = Modifier.height(48.dp))
 
-            SetupHeader()
+        ImagePickerArea(
+            uiState = uiState,
+            onPickImage = actions.onPickImage,
+            onInteraction = actions.onInteraction,
+        )
 
-            Spacer(modifier = Modifier.height(48.dp))
+        Spacer(modifier = Modifier.weight(1f))
 
-            ImagePickerArea(
-                uiState = uiState,
-                onPickImage = actions.onPickImage,
-                onInteraction = actions.onInteraction,
-            )
+        DifficultySection(
+            uiState = uiState,
+            onIntent = actions.onIntent,
+        )
 
-            Spacer(modifier = Modifier.weight(1f))
+        Spacer(modifier = Modifier.height(32.dp))
 
-            DifficultySection(
-                uiState = uiState,
-                onIntent = actions.onIntent,
-            )
+        StartGameButton(
+            uiState = uiState,
+            onIntent = actions.onIntent,
+            onStartGame = actions.onStartGame,
+        )
 
-            Spacer(modifier = Modifier.height(32.dp))
-
-            StartGameButton(
-                uiState = uiState,
-                onIntent = actions.onIntent,
-                onStartGame = actions.onStartGame,
-            )
-
-            Spacer(modifier = Modifier.height(24.dp))
-        }
+        Spacer(modifier = Modifier.height(24.dp))
     }
-}
-
-@Composable
-private fun SetupHeader() {
-    Text(
-        text = "Sliding Puzzle",
-        style =
-            MaterialTheme.typography.headlineLarge.copy(
-                fontWeight = FontWeight.Bold,
-                letterSpacing = (-0.5).sp,
-            ),
-        color = MaterialTheme.colorScheme.onBackground,
-        modifier = Modifier.padding(top = 32.dp),
-    )
-
-    Text(
-        text = "Choose an image and difficulty to start",
-        style = MaterialTheme.typography.bodyMedium,
-        color = MaterialTheme.colorScheme.secondary,
-        modifier = Modifier.padding(top = 8.dp),
-    )
 }
 
 @Composable
