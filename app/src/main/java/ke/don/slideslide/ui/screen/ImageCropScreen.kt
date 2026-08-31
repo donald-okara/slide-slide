@@ -89,6 +89,21 @@ fun ImageCropScreen(viewModel: PuzzleViewModel) {
         viewModel.onIntent(PuzzleIntent.CancelCrop)
     }
 
+    CropContent(
+        bitmap = bitmap,
+        onCancel = { viewModel.onIntent(PuzzleIntent.CancelCrop) },
+        onConfirm = { croppedBitmap ->
+            viewModel.onIntent(PuzzleIntent.ConfirmCrop(croppedBitmap))
+        },
+    )
+}
+
+@Composable
+fun CropContent(
+    bitmap: Bitmap,
+    onCancel: () -> Unit,
+    onConfirm: (Bitmap) -> Unit,
+) {
     Box(
         modifier =
             Modifier
@@ -128,14 +143,14 @@ fun ImageCropScreen(viewModel: PuzzleViewModel) {
             CropOverlay(viewportRect)
 
             CropControls(
-                onCancel = { viewModel.onIntent(PuzzleIntent.CancelCrop) },
+                onCancel = onCancel,
                 onConfirm = {
                     val croppedBitmap =
                         cropBitmap(
                             bitmap,
                             CropParams(scale, offset, viewportRect, screenWidth, screenHeight),
                         )
-                    viewModel.onIntent(PuzzleIntent.ConfirmCrop(croppedBitmap))
+                    onConfirm(croppedBitmap)
                 },
             )
         }
