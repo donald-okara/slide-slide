@@ -41,3 +41,4 @@ jobs:
         with:
           commit_message: "test: update screenshot references [skip ci]"
           file_pattern: 'app/src/screenshotTestDebug/reference/**'
+          pull_strategy: 'rebase'
