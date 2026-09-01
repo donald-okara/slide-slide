@@ -64,7 +64,8 @@ android {
     testOptions {
         extensions.findByName("screenshotTests")?.let {
             try {
-                it.javaClass.getMethod("setImageDifferenceThreshold", Float::class.javaPrimitiveType)
+                it.javaClass
+                    .getMethod("setImageDifferenceThreshold", Float::class.javaPrimitiveType)
                     .invoke(it, 0.001f)
             } catch (e: Exception) {
                 // Extension found but method not accessible or signature changed
