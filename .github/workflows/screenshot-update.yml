@@ -3,7 +3,7 @@ name: Update Screenshot References
 on:
   push:
     branches:
-      - 'phase-5/compose-ui'
+      - 'main'
   workflow_dispatch:
     inputs:
       branch:
