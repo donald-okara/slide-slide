@@ -28,6 +28,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -38,6 +39,7 @@ import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import androidx.navigation3.ui.NavDisplay
 import dagger.hilt.android.AndroidEntryPoint
 import ke.don.slideslide.ui.component.SlideTopAppBar
+import ke.don.slideslide.ui.component.SlideTopAppBarActions
 import ke.don.slideslide.ui.navigation.PuzzleRoute
 import ke.don.slideslide.ui.navigation.rememberPuzzleNavigator
 import ke.don.slideslide.ui.screen.PuzzleScreen
@@ -53,72 +55,97 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
-            val viewModel: PuzzleViewModel = hiltViewModel()
-            val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-            val navigator =
-                rememberPuzzleNavigator(
-                    onIntent = viewModel::onIntent,
-                    finishActivity = { finish() },
-                )
-
             SlideSlideTheme {
-                Scaffold(
-                    topBar = {
-                        val currentRoute = navigator.state.backStack.lastOrNull()
-                        val title =
-                            when (currentRoute) {
-                                is PuzzleRoute.Setup -> "Sliding Puzzle"
-                                is PuzzleRoute.Game -> "Game"
-                                else -> "Sliding Puzzle"
-                            }
-                        SlideTopAppBar(
-                            title = title,
-                            isSoundEnabled = uiState.isSoundEnabled,
-                            isVibrationEnabled = uiState.isVibrationEnabled,
-                            onToggleSound = { viewModel.onIntent(PuzzleIntent.ToggleSound) },
-                            onToggleVibration = { viewModel.onIntent(PuzzleIntent.ToggleVibration) },
-                            navigationIcon =
-                                if (navigator.state.backStack.size > 1) {
-                                    {
-                                        IconButton(onClick = { navigator.navigateBack() }) {
-                                            Icon(
-                                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                                                contentDescription = "Back",
-                                            )
-                                        }
-                                    }
-                                } else {
-                                    null
-                                },
-                        )
-                    },
-                ) { innerPadding ->
-                    Box(modifier = Modifier.padding(innerPadding)) {
-                        NavDisplay(
-                            backStack = navigator.state.backStack,
-                            onBack = { navigator.navigateBack() },
-                            entryDecorators =
-                                listOf(
-                                    rememberSaveableStateHolderNavEntryDecorator(),
-                                    rememberViewModelStoreNavEntryDecorator(),
-                                ),
-                            entryProvider =
-                                entryProvider {
-                                    entry<PuzzleRoute.Setup> {
-                                        SetupScreen(
-                                            viewModel = viewModel,
-                                        ) { navigator.navigateToGame() }
-                                    }
-                                    entry<PuzzleRoute.Game> {
-                                        PuzzleScreen(
-                                            viewModel = viewModel,
-                                        ) { navigator.navigateBack() }
-                                    }
-                                },
-                        )
-                    }
-                }
+                SlideApp(finishActivity = { finish() })
             }
         }
     }
+}
+
+@RequiresApi(Build.VERSION_CODES.O)
+@Composable
+fun SlideApp(
+    viewModel: PuzzleViewModel = hiltViewModel(),
+    finishActivity: () -> Unit,
+) {
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val navigator =
+        rememberPuzzleNavigator(
+            onIntent = viewModel::onIntent,
+            finishActivity = finishActivity,
+        )
+
+    Scaffold(
+        topBar = {
+            SlideAppTopBar(
+                navigator = navigator,
+                uiState = uiState,
+                onIntent = viewModel::onIntent,
+            )
+        },
+    ) { innerPadding ->
+        Box(modifier = Modifier.padding(innerPadding)) {
+            NavDisplay(
+                backStack = navigator.state.backStack,
+                onBack = { navigator.navigateBack() },
+                entryDecorators =
+                    listOf(
+                        rememberSaveableStateHolderNavEntryDecorator(),
+                        rememberViewModelStoreNavEntryDecorator(),
+                    ),
+                entryProvider =
+                    entryProvider {
+                        entry<PuzzleRoute.Setup> {
+                            SetupScreen(
+                                viewModel = viewModel,
+                            ) { navigator.navigateToGame() }
+                        }
+                        entry<PuzzleRoute.Game> {
+                            PuzzleScreen(
+                                viewModel = viewModel,
+                            ) { navigator.navigateBack() }
+                        }
+                    },
+            )
+        }
+    }
+}
+
+@Composable
+fun SlideAppTopBar(
+    navigator: ke.don.slideslide.ui.navigation.PuzzleNavigator,
+    uiState: ke.don.slideslide.ui.state.PuzzleUiState,
+    onIntent: (PuzzleIntent) -> Unit,
+) {
+    val currentRoute = navigator.state.backStack.lastOrNull()
+    val title =
+        when (currentRoute) {
+            is PuzzleRoute.Setup -> "Slide Slide"
+            is PuzzleRoute.Game -> "Game"
+            else -> "Slide Slide"
+        }
+
+    SlideTopAppBar(
+        title = title,
+        actions =
+            SlideTopAppBarActions(
+                isSoundEnabled = uiState.isSoundEnabled,
+                isVibrationEnabled = uiState.isVibrationEnabled,
+                onToggleSound = { onIntent(PuzzleIntent.ToggleSound) },
+                onToggleVibration = { onIntent(PuzzleIntent.ToggleVibration) },
+            ),
+        navigationIcon =
+            if (navigator.state.backStack.size > 1) {
+                {
+                    IconButton(onClick = { navigator.navigateBack() }) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "Back",
+                        )
+                    }
+                }
+            } else {
+                null
+            },
+    )
 }

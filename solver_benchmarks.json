@@ -2,19 +2,19 @@
 {
     "difficulty": "EASY",
     "status": "SUCCESS",
-    "avg_moves": 19.33,
-    "avg_time_ms": 0.67
+    "avg_moves": 23.33,
+    "avg_time_ms": 1.00
 },
 {
     "difficulty": "MEDIUM",
     "status": "SUCCESS",
-    "avg_moves": 67.33,
-    "avg_time_ms": 8.00
+    "avg_moves": 74.67,
+    "avg_time_ms": 6.00
 },
 {
     "difficulty": "HARD",
     "status": "SUCCESS",
-    "avg_moves": 125.33,
-    "avg_time_ms": 23.67
+    "avg_moves": 154.00,
+    "avg_time_ms": 84.67
 }
 ]

@@ -34,10 +34,7 @@ import androidx.compose.ui.unit.sp
 @Composable
 fun SlideTopAppBar(
     title: String,
-    isSoundEnabled: Boolean,
-    isVibrationEnabled: Boolean,
-    onToggleSound: () -> Unit,
-    onToggleVibration: () -> Unit,
+    actions: SlideTopAppBarActions,
     modifier: Modifier = Modifier,
     navigationIcon: @Composable (() -> Unit)? = null,
 ) {
@@ -55,19 +52,19 @@ fun SlideTopAppBar(
         navigationIcon = { navigationIcon?.invoke() },
         actions = {
             val soundIcon =
-                if (isSoundEnabled) {
+                if (actions.isSoundEnabled) {
                     Icons.AutoMirrored.Filled.VolumeUp
                 } else {
                     Icons.AutoMirrored.Filled.VolumeOff
                 }
             val soundTint =
-                if (isSoundEnabled) {
+                if (actions.isSoundEnabled) {
                     MaterialTheme.colorScheme.primary
                 } else {
                     MaterialTheme.colorScheme.secondary
                 }
 
-            IconButton(onClick = onToggleSound) {
+            IconButton(onClick = actions.onToggleSound) {
                 Icon(
                     imageVector = soundIcon,
                     contentDescription = "Toggle Sound",
@@ -76,13 +73,13 @@ fun SlideTopAppBar(
             }
 
             val vibrationTint =
-                if (isVibrationEnabled) {
+                if (actions.isVibrationEnabled) {
                     MaterialTheme.colorScheme.primary
                 } else {
                     MaterialTheme.colorScheme.secondary
                 }
 
-            IconButton(onClick = onToggleVibration) {
+            IconButton(onClick = actions.onToggleVibration) {
                 Icon(
                     imageVector = Icons.Default.Vibration,
                     contentDescription = "Toggle Vibration",

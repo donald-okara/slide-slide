@@ -33,7 +33,6 @@ import ke.don.slideslide.ui.state.PuzzleUiState
 import ke.don.slideslide.ui.theme.SlideSlideTheme
 
 class ScreenScreenshotTest {
-
     @PreviewTest
     @Preview(showBackground = true, name = "Setup Screen")
     @Composable
@@ -41,12 +40,13 @@ class ScreenScreenshotTest {
         TestScreenWrapper(title = "Sliding Puzzle") {
             SetupContent(
                 uiState = PuzzleUiState(difficulty = Difficulty.EASY),
-                actions = SetupActions(
-                    onIntent = {},
-                    onPickImage = {},
-                    onStartGame = {},
-                    onInteraction = {}
-                )
+                actions =
+                    SetupActions(
+                        onIntent = {},
+                        onPickImage = {},
+                        onStartGame = {},
+                        onInteraction = {},
+                    ),
             )
         }
     }
@@ -56,25 +56,27 @@ class ScreenScreenshotTest {
     @Composable
     fun PuzzleScreenScreenshot() {
         val difficulty = Difficulty.EASY
-        val tiles = List(difficulty.totalTiles) { index ->
-            Tile(
-                id = index,
-                value = index,
-                currentPosition = index,
-                correctPosition = index,
-                isBlank = index == difficulty.totalTiles - 1
-            )
-        }
+        val tiles =
+            List(difficulty.totalTiles) { index ->
+                Tile(
+                    id = index,
+                    value = index,
+                    currentPosition = index,
+                    correctPosition = index,
+                    isBlank = index == difficulty.totalTiles - 1,
+                )
+            }
         TestScreenWrapper(title = "Game") {
             PuzzleContent(
-                uiState = PuzzleUiState(
-                    difficulty = difficulty,
-                    tiles = tiles,
-                    moveCount = 5,
-                    timerSeconds = 42
-                ),
+                uiState =
+                    PuzzleUiState(
+                        difficulty = difficulty,
+                        tiles = tiles,
+                        moveCount = 5,
+                        timerSeconds = 42,
+                    ),
                 onIntent = {},
-                onBackClick = {}
+                onBackClick = {},
             )
         }
     }
@@ -88,7 +90,7 @@ class ScreenScreenshotTest {
             CropContent(
                 bitmap = bitmap,
                 onCancel = {},
-                onConfirm = {}
+                onConfirm = {},
             )
         }
     }
@@ -96,7 +98,7 @@ class ScreenScreenshotTest {
     @Composable
     private fun TestScreenWrapper(
         title: String,
-        content: @Composable () -> Unit
+        content: @Composable () -> Unit,
     ) {
         SlideSlideTheme {
             Scaffold(
@@ -106,9 +108,9 @@ class ScreenScreenshotTest {
                         isSoundEnabled = true,
                         isVibrationEnabled = true,
                         onToggleSound = {},
-                        onToggleVibration = {}
+                        onToggleVibration = {},
                     )
-                }
+                },
             ) { innerPadding ->
                 Box(modifier = Modifier.padding(innerPadding)) {
                     content()
@@ -121,10 +123,11 @@ class ScreenScreenshotTest {
         val size = 512
         val bitmap = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)
         val canvas = Canvas(bitmap)
-        val paint = Paint().apply {
-            color = Color.RED
-            style = Paint.Style.FILL
-        }
+        val paint =
+            Paint().apply {
+                color = Color.RED
+                style = Paint.Style.FILL
+            }
         canvas.drawRect(0f, 0f, size.toFloat(), size.toFloat(), paint)
         paint.color = Color.BLUE
         canvas.drawCircle(size / 2f, size / 2f, size / 4f, paint)
