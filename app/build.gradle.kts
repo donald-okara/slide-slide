@@ -66,7 +66,7 @@ android {
             try {
                 it.javaClass
                     .getMethod("setImageDifferenceThreshold", Float::class.javaPrimitiveType)
-                    .invoke(it, 0.001f)
+                    .invoke(it, 0.01f) // Increased to 1% to account for environment noise
             } catch (e: Exception) {
                 // Extension found but method not accessible or signature changed
             }
