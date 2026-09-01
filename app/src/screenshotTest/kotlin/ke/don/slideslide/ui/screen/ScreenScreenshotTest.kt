@@ -29,6 +29,7 @@ import com.android.tools.screenshot.PreviewTest
 import ke.don.slideslide.domain.model.Difficulty
 import ke.don.slideslide.domain.model.Tile
 import ke.don.slideslide.ui.component.SlideTopAppBar
+import ke.don.slideslide.ui.component.SlideTopAppBarActions
 import ke.don.slideslide.ui.state.PuzzleUiState
 import ke.don.slideslide.ui.theme.SlideSlideTheme
 
@@ -37,7 +38,7 @@ class ScreenScreenshotTest {
     @Preview(showBackground = true, name = "Setup Screen")
     @Composable
     fun SetupScreenScreenshot() {
-        TestScreenWrapper(title = "Sliding Puzzle") {
+        TestScreenWrapper(title = "Slide Slide") {
             SetupContent(
                 uiState = PuzzleUiState(difficulty = Difficulty.EASY),
                 actions =
@@ -105,10 +106,13 @@ class ScreenScreenshotTest {
                 topBar = {
                     SlideTopAppBar(
                         title = title,
-                        isSoundEnabled = true,
-                        isVibrationEnabled = true,
-                        onToggleSound = {},
-                        onToggleVibration = {},
+                        actions =
+                            SlideTopAppBarActions(
+                                isSoundEnabled = true,
+                                isVibrationEnabled = true,
+                                onToggleSound = {},
+                                onToggleVibration = {},
+                            ),
                     )
                 },
             ) { innerPadding ->
