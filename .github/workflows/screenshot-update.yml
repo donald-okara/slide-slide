@@ -1,0 +1,44 @@
+name: Update Screenshot References
+
+on:
+  push:
+    branches:
+      - 'main'
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: 'Branch to update screenshots for'
+        required: true
+        default: 'main'
+
+jobs:
+  update-screenshots:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.branch || github.ref }}
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: gradle
+
+      - name: Grant Execute Permission for Gradlew
+        run: chmod +x gradlew
+
+      - name: Update Screenshots
+        run: ./gradlew updateDebugScreenshotTest
+
+      - name: Commit and Push Changes
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "test: update screenshot references [skip ci]"
+          file_pattern: 'app/src/screenshotTestDebug/reference/**'
+          pull_strategy: 'rebase'

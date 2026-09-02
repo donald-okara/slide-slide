@@ -30,7 +30,7 @@ class BitmapSlicerTest {
 
     @Test
     fun `slice creates one tile per puzzle position`() {
-        val bitmap = Bitmap.createBitmap(900, 600, Bitmap.Config.ARGB_8888)
+        val bitmap = Bitmap.createBitmap(600, 600, Bitmap.Config.ARGB_8888)
 
         val tiles = slicer.slice(bitmap, Difficulty.EASY)
 

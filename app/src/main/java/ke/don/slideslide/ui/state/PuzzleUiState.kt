@@ -25,6 +25,7 @@ import ke.don.slideslide.domain.model.Tile
  * Represents the UI state for the puzzle screen.
  */
 data class PuzzleUiState(
+    val gameId: Long = 0,
     val tiles: List<Tile> = emptyList(),
     val moveCount: Int = 0,
     val isWon: Boolean = false,
@@ -33,8 +34,17 @@ data class PuzzleUiState(
     val gameStartTime: Long? = null,
     val gameEndTime: Long? = null,
     val solutionMoves: List<Move> = emptyList(),
+    val isHintActive: Boolean = false,
     val selectedImageUri: Uri? = null,
+    val originalImage: Bitmap? = null,
     val imageTiles: List<Bitmap> = emptyList(),
+    val showVictoryDialog: Boolean = false,
+    val showImagePreview: Boolean = false,
+    val isAutoSolving: Boolean = false,
+    val isCropping: Boolean = false,
+    val croppingImage: Bitmap? = null,
+    val isSoundEnabled: Boolean = true,
+    val isVibrationEnabled: Boolean = true,
     val isLoading: Boolean = false,
     val error: String? = null,
 )

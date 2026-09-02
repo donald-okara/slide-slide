@@ -143,7 +143,7 @@ class SolverBenchmarkTest {
 
     companion object {
         private const val SHUFFLE_DEPTH_EASY = 100
-        private const val SHUFFLE_DEPTH_MEDIUM = 20
-        private const val SHUFFLE_DEPTH_HARD = 10
+        private const val SHUFFLE_DEPTH_MEDIUM = 200
+        private const val SHUFFLE_DEPTH_HARD = 300
     }
 }

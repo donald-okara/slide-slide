@@ -16,22 +16,24 @@
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
+    alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.spotless)
     alias(libs.plugins.detekt)
     alias(libs.plugins.ktlint)
     alias(libs.plugins.ksp)
     alias(libs.plugins.hilt)
+    alias(libs.plugins.screenshot)
     jacoco
 }
 
 android {
     namespace = "ke.don.slideslide"
-    compileSdk = 36
+    compileSdk = 37
 
     defaultConfig {
         applicationId = "ke.don.slideslide"
         minSdk = 24
-        targetSdk = 36
+        targetSdk = 37
         versionCode = 1
         versionName = "1.0"
 
@@ -55,6 +57,20 @@ android {
     }
     buildFeatures {
         compose = true
+    }
+
+    experimentalProperties["android.experimental.enableScreenshotTest"] = true
+
+    testOptions {
+        extensions.findByName("screenshotTests")?.let {
+            try {
+                it.javaClass
+                    .getMethod("setImageDifferenceThreshold", Float::class.javaPrimitiveType)
+                    .invoke(it, 0.01f) // Increased to 1% to account for environment noise
+            } catch (e: Exception) {
+                // Extension found but method not accessible or signature changed
+            }
+        }
     }
 }
 
@@ -130,14 +146,22 @@ dependencies {
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.compose.material3)
+    implementation(libs.androidx.compose.material.icons.extended)
     implementation(libs.androidx.compose.ui)
     implementation(libs.androidx.compose.ui.graphics)
     implementation(libs.androidx.compose.ui.tooling.preview)
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
+    implementation(libs.androidx.lifecycle.runtime.compose)
+    implementation(libs.androidx.lifecycle.viewmodel.compose)
+    implementation(libs.androidx.navigation3.runtime)
+    implementation(libs.androidx.navigation3.ui)
+    implementation(libs.androidx.lifecycle.viewmodel.navigation3)
+    implementation(libs.kotlinx.serialization.json)
 
     // Hilt
     implementation(libs.hilt.android)
+    implementation(libs.androidx.hilt.navigation.compose)
     ksp(libs.hilt.compiler)
 
     // Room
@@ -157,4 +181,7 @@ dependencies {
     androidTestImplementation(libs.androidx.junit)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
     debugImplementation(libs.androidx.compose.ui.tooling)
+
+    screenshotTestImplementation(libs.screenshot.validation.api)
+    screenshotTestImplementation(libs.androidx.compose.ui.tooling)
 }

@@ -1,0 +1,293 @@
+/*
+ * Copyright (C) 2026 Donald Isoe.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package ke.don.slideslide.ui.screen
+
+import android.graphics.ImageDecoder
+import android.net.Uri
+import android.os.Build
+import android.provider.MediaStore
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.annotation.RequiresApi
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AddPhotoAlternate
+import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import ke.don.slideslide.domain.model.Difficulty
+import ke.don.slideslide.ui.component.DifficultySelector
+import ke.don.slideslide.ui.state.PuzzleIntent
+import ke.don.slideslide.ui.state.PuzzleUiState
+import ke.don.slideslide.ui.utils.SlidePreviewContent
+import ke.don.slideslide.ui.utils.SlideScreenPreview
+import ke.don.slideslide.ui.viewmodel.PuzzleViewModel
+
+@RequiresApi(Build.VERSION_CODES.O)
+@Composable
+fun SetupScreen(
+    viewModel: PuzzleViewModel,
+    modifier: Modifier = Modifier,
+    onStartGame: () -> Unit,
+) {
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val context = LocalContext.current
+
+    val launcher =
+        rememberLauncherForActivityResult(
+            contract = ActivityResultContracts.GetContent(),
+        ) { uri: Uri? ->
+            uri?.let { viewModel.onIntent(PuzzleIntent.SelectImage(it)) }
+        }
+
+    LaunchedEffect(uiState.selectedImageUri, uiState.difficulty) {
+        val uri = uiState.selectedImageUri
+        if (uri != null) {
+            val bitmap =
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                    val source = ImageDecoder.createSource(context.contentResolver, uri)
+                    ImageDecoder.decodeBitmap(source)
+                } else {
+                    @Suppress("DEPRECATION")
+                    MediaStore.Images.Media.getBitmap(context.contentResolver, uri)
+                }
+            viewModel.onIntent(PuzzleIntent.ProcessImage(bitmap, uiState.difficulty))
+        }
+    }
+
+    SetupContent(
+        uiState = uiState,
+        actions =
+            SetupActions(
+                onIntent = { viewModel.onIntent(it) },
+                onPickImage = { launcher.launch("image/*") },
+                onStartGame = onStartGame,
+                onInteraction = { viewModel.playClickFeedback() },
+            ),
+        modifier = modifier,
+    )
+
+    if (uiState.isCropping) {
+        ImageCropScreen(viewModel = viewModel)
+    }
+}
+
+@Composable
+fun SetupContent(
+    uiState: PuzzleUiState,
+    actions: SetupActions,
+    modifier: Modifier = Modifier,
+) {
+    Column(
+        modifier =
+            modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+                .padding(24.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Spacer(modifier = Modifier.height(48.dp))
+
+        ImagePickerArea(
+            uiState = uiState,
+            onPickImage = actions.onPickImage,
+            onInteraction = actions.onInteraction,
+        )
+
+        Spacer(modifier = Modifier.weight(1f))
+
+        DifficultySection(
+            uiState = uiState,
+            onIntent = actions.onIntent,
+        )
+
+        Spacer(modifier = Modifier.height(32.dp))
+
+        StartGameButton(
+            uiState = uiState,
+            onIntent = actions.onIntent,
+            onStartGame = actions.onStartGame,
+        )
+
+        Spacer(modifier = Modifier.height(24.dp))
+    }
+}
+
+@Composable
+private fun ImagePickerArea(
+    uiState: PuzzleUiState,
+    onPickImage: () -> Unit,
+    onInteraction: () -> Unit,
+) {
+    Box(
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .aspectRatio(1f)
+                .clip(RoundedCornerShape(32.dp))
+                .background(MaterialTheme.colorScheme.surface)
+                .clickable {
+                    onInteraction()
+                    onPickImage()
+                },
+        contentAlignment = Alignment.Center,
+    ) {
+        if (uiState.originalImage != null) {
+            Image(
+                bitmap = uiState.originalImage.asImageBitmap(),
+                contentDescription = "Selected Image",
+                modifier = Modifier.fillMaxSize(),
+                contentScale = ContentScale.Fit,
+            )
+        } else {
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Icon(
+                    imageVector = Icons.Default.AddPhotoAlternate,
+                    contentDescription = null,
+                    modifier = Modifier.size(48.dp),
+                    tint = MaterialTheme.colorScheme.secondary,
+                )
+                Spacer(modifier = Modifier.height(12.dp))
+                Text(
+                    text = "Select an Image",
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.secondary,
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun DifficultySection(
+    uiState: PuzzleUiState,
+    onIntent: (PuzzleIntent) -> Unit,
+) {
+    Text(
+        text = "DIFFICULTY",
+        style =
+            MaterialTheme.typography.labelSmall.copy(
+                fontWeight = FontWeight.Bold,
+                letterSpacing = 1.sp,
+            ),
+        color = MaterialTheme.colorScheme.primary,
+        modifier = Modifier.padding(bottom = 12.dp),
+    )
+
+    DifficultySelector(
+        selectedDifficulty = uiState.difficulty,
+        onDifficultySelected = { onIntent(PuzzleIntent.ChangeDifficulty(it)) },
+    )
+}
+
+@Composable
+private fun StartGameButton(
+    uiState: PuzzleUiState,
+    onIntent: (PuzzleIntent) -> Unit,
+    onStartGame: () -> Unit,
+) {
+    val isEnabled = uiState.selectedImageUri != null || uiState.originalImage != null
+    Button(
+        onClick = {
+            onIntent(PuzzleIntent.Shuffle)
+            onStartGame()
+        },
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .height(64.dp),
+        shape = RoundedCornerShape(32.dp),
+        colors =
+            ButtonDefaults.buttonColors(
+                containerColor =
+                    if (isEnabled) {
+                        MaterialTheme.colorScheme.primary
+                    } else {
+                        MaterialTheme.colorScheme.surfaceVariant
+                    },
+                contentColor =
+                    if (isEnabled) {
+                        MaterialTheme.colorScheme.onPrimary
+                    } else {
+                        MaterialTheme.colorScheme.onSurfaceVariant
+                    },
+            ),
+        enabled = isEnabled,
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Icon(
+                imageVector = Icons.Default.PlayArrow,
+                contentDescription = null,
+                modifier = Modifier.size(24.dp),
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+            Text(
+                text = "Start Game",
+                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+            )
+        }
+    }
+}
+
+@Suppress("UnusedPrivateMember")
+@SlideScreenPreview
+@Composable
+private fun SetupContentPreview() {
+    SlidePreviewContent(withPadding = false) {
+        SetupContent(
+            uiState = PuzzleUiState(difficulty = Difficulty.EASY),
+            actions =
+                SetupActions(
+                    onIntent = {},
+                    onPickImage = {},
+                    onStartGame = {},
+                    onInteraction = {},
+                ),
+        )
+    }
+}

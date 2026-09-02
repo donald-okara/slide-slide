@@ -39,7 +39,8 @@ object DatabaseModule {
                 context,
                 AppDatabase::class.java,
                 "slideslide.db",
-            ).build()
+            ).fallbackToDestructiveMigration(dropAllTables = true)
+            .build()
 
     @Provides
     fun providePuzzleDao(database: AppDatabase): PuzzleDao = database.puzzleDao()
