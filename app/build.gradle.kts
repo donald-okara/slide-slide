@@ -23,6 +23,7 @@ plugins {
     alias(libs.plugins.ksp)
     alias(libs.plugins.hilt)
     alias(libs.plugins.screenshot)
+    alias(libs.plugins.play.publisher)
     jacoco
 }
 
@@ -40,8 +41,18 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    signingConfigs {
+        create("release") {
+            storeFile = file(System.getenv("RELEASE_STORE_FILE") ?: "keystore.jks")
+            storePassword = System.getenv("RELEASE_STORE_PASSWORD")
+            keyAlias = System.getenv("RELEASE_KEY_ALIAS")
+            keyPassword = System.getenv("RELEASE_KEY_PASSWORD")
+        }
+    }
+
     buildTypes {
         release {
+            signingConfig = signingConfigs.getByName("release")
             optimization {
                 enable = false
             }
@@ -71,6 +82,11 @@ android {
                 // Extension found but method not accessible or signature changed
             }
         }
+    }
+
+    play {
+        serviceAccountCredentials.set(file(System.getenv("SERVICE_ACCOUNT_JSON") ?: "service-account.json"))
+        track.set("internal")
     }
 }
 
