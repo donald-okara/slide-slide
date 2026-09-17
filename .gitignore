@@ -15,3 +15,7 @@
 local.properties
 sliding-puzzle
 .artifacts/
+*.jks
+service-account.json
+*.aab
+*.apk
