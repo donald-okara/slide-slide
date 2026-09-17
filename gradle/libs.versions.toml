@@ -23,6 +23,7 @@ kotlinxSerialization = "1.11.0"
 nav3 = "1.1.7"
 lifecycleNav3 = "2.11.0"
 hiltNavigationCompose = "1.4.0"
+gpp = "4.1.1"
 screenshot = "0.0.1-alpha16"
 
 [libraries]
@@ -68,6 +69,7 @@ detekt = { id = "io.gitlab.arturbosch.detekt", version.ref = "detekt" }
 ktlint = { id = "org.jlleitschuh.gradle.ktlint", version.ref = "ktlint-gradle" }
 ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
 hilt = { id = "com.google.dagger.hilt.android", version.ref = "hilt" }
+play-publisher = { id = "com.github.triplet.play", version.ref = "gpp" }
 kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
 screenshot = { id = "com.android.compose.screenshot", version.ref = "screenshot" }
 
