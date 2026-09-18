@@ -2,4 +2,10 @@
 <resources>
 
     <style name="Theme.SlideSlide" parent="android:Theme.Material.Light.NoActionBar" />
+
+    <style name="Theme.SlideSlide.Splash" parent="Theme.SplashScreen">
+        <item name="windowSplashScreenBackground">@color/splash_background</item>
+        <item name="windowSplashScreenAnimatedIcon">@mipmap/ic_launcher</item>
+        <item name="postSplashScreenTheme">@style/Theme.SlideSlide</item>
+    </style>
 </resources>
