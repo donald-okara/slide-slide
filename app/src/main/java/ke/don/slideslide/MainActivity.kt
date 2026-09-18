@@ -31,6 +31,8 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.navigation3.rememberViewModelStoreNavEntryDecorator
@@ -40,11 +42,13 @@ import androidx.navigation3.ui.NavDisplay
 import dagger.hilt.android.AndroidEntryPoint
 import ke.don.slideslide.ui.component.SlideTopAppBar
 import ke.don.slideslide.ui.component.SlideTopAppBarActions
+import ke.don.slideslide.ui.navigation.PuzzleNavigator
 import ke.don.slideslide.ui.navigation.PuzzleRoute
 import ke.don.slideslide.ui.navigation.rememberPuzzleNavigator
 import ke.don.slideslide.ui.screen.PuzzleScreen
 import ke.don.slideslide.ui.screen.SetupScreen
 import ke.don.slideslide.ui.state.PuzzleIntent
+import ke.don.slideslide.ui.state.PuzzleUiState
 import ke.don.slideslide.ui.theme.SlideSlideTheme
 import ke.don.slideslide.ui.viewmodel.PuzzleViewModel
 
@@ -52,6 +56,7 @@ import ke.don.slideslide.ui.viewmodel.PuzzleViewModel
 class MainActivity : ComponentActivity() {
     @RequiresApi(Build.VERSION_CODES.O)
     override fun onCreate(savedInstanceState: Bundle?) {
+        installSplashScreen()
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
@@ -113,8 +118,8 @@ fun SlideApp(
 
 @Composable
 fun SlideAppTopBar(
-    navigator: ke.don.slideslide.ui.navigation.PuzzleNavigator,
-    uiState: ke.don.slideslide.ui.state.PuzzleUiState,
+    navigator: PuzzleNavigator,
+    uiState: PuzzleUiState,
     onIntent: (PuzzleIntent) -> Unit,
 ) {
     val currentRoute = navigator.state.backStack.lastOrNull()
@@ -148,4 +153,27 @@ fun SlideAppTopBar(
                 null
             },
     )
+}
+
+@Preview
+@Composable
+fun SlideAppTopBarPreview() {
+    val mockNavigator =
+        rememberPuzzleNavigator(
+            onIntent = {},
+            finishActivity = {},
+        )
+    val mockUiState =
+        PuzzleUiState(
+            isSoundEnabled = true,
+            isVibrationEnabled = false,
+        )
+
+    SlideSlideTheme {
+        SlideAppTopBar(
+            navigator = mockNavigator,
+            uiState = mockUiState,
+            onIntent = {},
+        )
+    }
 }

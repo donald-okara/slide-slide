@@ -15,20 +15,24 @@
  */
 package ke.don.slideslide.ui.component
 
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.layout.height
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.VolumeOff
 import androidx.compose.material.icons.automirrored.filled.VolumeUp
 import androidx.compose.material.icons.filled.Vibration
-import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.sp
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
+import ke.don.slideslide.R
+import ke.don.slideslide.ui.theme.SlideSlideTheme
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -38,15 +42,12 @@ fun SlideTopAppBar(
     modifier: Modifier = Modifier,
     navigationIcon: @Composable (() -> Unit)? = null,
 ) {
-    CenterAlignedTopAppBar(
+    TopAppBar(
         title = {
-            Text(
-                text = title,
-                style =
-                    MaterialTheme.typography.titleLarge.copy(
-                        fontWeight = FontWeight.Bold,
-                        letterSpacing = (-0.5).sp,
-                    ),
+            Image(
+                painter = painterResource(id = R.drawable.slide_slide_banner),
+                contentDescription = title,
+                modifier = Modifier.height(32.dp),
             )
         },
         navigationIcon = { navigationIcon?.invoke() },
@@ -89,4 +90,22 @@ fun SlideTopAppBar(
         },
         modifier = modifier,
     )
+}
+
+@Suppress("UnusedPrivateMember")
+@Preview(showBackground = true)
+@Composable
+private fun SlideTopAppBarPreview() {
+    SlideSlideTheme {
+        SlideTopAppBar(
+            title = "Slide Slide",
+            actions =
+                SlideTopAppBarActions(
+                    isSoundEnabled = true,
+                    isVibrationEnabled = false,
+                    onToggleSound = {},
+                    onToggleVibration = {},
+                ),
+        )
+    }
 }
