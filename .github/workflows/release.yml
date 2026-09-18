@@ -5,12 +5,44 @@ on:
     tags:
       - 'v*'
 
+permissions:
+  contents: write
+
 jobs:
   release:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Update Version
+        run: |
+          TAG_NAME=${GITHUB_REF#refs/tags/}
+          NEW_VERSION_NAME=${TAG_NAME#v}
+          
+          # Read current version code from gradle.properties
+          CURRENT_VERSION_CODE=$(grep "^VERSION_CODE=" gradle.properties | cut -d'=' -f2)
+          NEW_VERSION_CODE=$((CURRENT_VERSION_CODE + 1))
+          
+          # Update gradle.properties
+          sed -i "s/^VERSION_CODE=.*/VERSION_CODE=$NEW_VERSION_CODE/" gradle.properties
+          sed -i "s/^VERSION_NAME=.*/VERSION_NAME=$NEW_VERSION_NAME/" gradle.properties
+          
+          echo "NEW_VERSION_CODE=$NEW_VERSION_CODE" >> $GITHUB_ENV
+          echo "NEW_VERSION_NAME=$NEW_VERSION_NAME" >> $GITHUB_ENV
+          
+          echo "Updated to Version Name: $NEW_VERSION_NAME, Version Code: $NEW_VERSION_CODE"
+
+      - name: Commit and Push changes
+        run: |
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git config --global user.name "github-actions[bot]"
+          git add gradle.properties
+          git commit -m "Bump version to $NEW_VERSION_NAME ($NEW_VERSION_CODE) [skip ci]"
+          git push origin HEAD:main
 
       - name: Set up JDK 17
         uses: actions/setup-java@v4
