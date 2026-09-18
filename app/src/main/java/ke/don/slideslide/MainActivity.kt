@@ -29,9 +29,9 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -40,7 +40,6 @@ import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import androidx.navigation3.ui.NavDisplay
 import dagger.hilt.android.AndroidEntryPoint
-import androidx.compose.ui.tooling.preview.Preview
 import ke.don.slideslide.ui.component.SlideTopAppBar
 import ke.don.slideslide.ui.component.SlideTopAppBarActions
 import ke.don.slideslide.ui.navigation.PuzzleNavigator
@@ -48,8 +47,8 @@ import ke.don.slideslide.ui.navigation.PuzzleRoute
 import ke.don.slideslide.ui.navigation.rememberPuzzleNavigator
 import ke.don.slideslide.ui.screen.PuzzleScreen
 import ke.don.slideslide.ui.screen.SetupScreen
-import ke.don.slideslide.ui.state.PuzzleUiState
 import ke.don.slideslide.ui.state.PuzzleIntent
+import ke.don.slideslide.ui.state.PuzzleUiState
 import ke.don.slideslide.ui.theme.SlideSlideTheme
 import ke.don.slideslide.ui.viewmodel.PuzzleViewModel
 
@@ -159,20 +158,22 @@ fun SlideAppTopBar(
 @Preview
 @Composable
 fun SlideAppTopBarPreview() {
-    val mockNavigator = rememberPuzzleNavigator(
-        onIntent = {},
-        finishActivity = {}
-    )
-    val mockUiState = PuzzleUiState(
-        isSoundEnabled = true,
-        isVibrationEnabled = false
-    )
+    val mockNavigator =
+        rememberPuzzleNavigator(
+            onIntent = {},
+            finishActivity = {},
+        )
+    val mockUiState =
+        PuzzleUiState(
+            isSoundEnabled = true,
+            isVibrationEnabled = false,
+        )
 
     SlideSlideTheme {
         SlideAppTopBar(
             navigator = mockNavigator,
             uiState = mockUiState,
-            onIntent = {}
+            onIntent = {},
         )
     }
 }

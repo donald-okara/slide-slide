@@ -21,7 +21,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.VolumeOff
 import androidx.compose.material.icons.automirrored.filled.VolumeUp
 import androidx.compose.material.icons.filled.Vibration
-import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -93,18 +92,20 @@ fun SlideTopAppBar(
     )
 }
 
+@Suppress("UnusedPrivateMember")
 @Preview(showBackground = true)
 @Composable
 private fun SlideTopAppBarPreview() {
     SlideSlideTheme {
         SlideTopAppBar(
             title = "Slide Slide",
-            actions = SlideTopAppBarActions(
-                isSoundEnabled = true,
-                isVibrationEnabled = false,
-                onToggleSound = {},
-                onToggleVibration = {},
-            ),
+            actions =
+                SlideTopAppBarActions(
+                    isSoundEnabled = true,
+                    isVibrationEnabled = false,
+                    onToggleSound = {},
+                    onToggleVibration = {},
+                ),
         )
     }
 }
